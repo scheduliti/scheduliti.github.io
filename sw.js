@@ -1,7 +1,7 @@
 // ⚠️ בכל פעם שאתה מעדכן קובץ כלשהו באפליקציה (index.html וכו'),
 // תעלה את המספר הזה (v4 → v5 → v6...). זה היוצר את הגרסה החדשה.
-const CACHE_VERSION = 'v4';
-const CACHE_NAME = 'lev-schedule-' + CACHE_VERSION;
+const CACHE_VERSION = 'v5';
+const CACHE_NAME = 'hilit-schedule-' + CACHE_VERSION;
 
 const ASSETS_TO_CACHE = [
   './',
