@@ -25,7 +25,7 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(k => k.startsWith('lev-schedule-') && k !== CACHE_NAME)
+        keys.filter(k => k.startsWith('hilit-schedule-') && k !== CACHE_NAME)
             .map(k => caches.delete(k))
       ))
       .then(() => self.clients.claim()) // תפוס שליטה על כל הטאבים הפתוחים מיד, בלי לחכות לרענון ידני
