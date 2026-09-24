@@ -1529,6 +1529,46 @@
                 opacity: 1;
                 pointer-events: auto;
             }
+        .egg-video-wrap.need-rotate video {
+            display: none;
+        }
+
+        .egg-rotate {
+            display: none;
+            position: absolute;
+            inset: 0;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            color: #fff;
+            text-align: center;
+            padding: 24px;
+        }
+
+        .egg-video-wrap.need-rotate .egg-rotate {
+            display: flex;
+        }
+
+        .egg-rotate-icon {
+            font-size: 64px;
+            animation: eggRotate 2s ease-in-out infinite;
+        }
+
+        .egg-rotate-text {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        @keyframes eggRotate {
+            0%, 25% {
+                transform: rotate(0deg);
+            }
+
+            65%, 100% {
+                transform: rotate(-90deg);
+            }
+        }
     </style>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -3179,7 +3219,8 @@
             function eggReveal() {
                 const wrap = document.createElement('div');
                 wrap.className = 'egg-video-wrap';
-                wrap.innerHTML = '<video src="./us.mp4" playsinline loop controls></video>';
+                wrap.innerHTML = '<video src="./us.mp4" playsinline loop controls></video>' +
+                    '<div class="egg-rotate"><div class="egg-rotate-icon">📱</div><div class="egg-rotate-text">הטי את הטלפון על הצד כדי לצפות 🌸</div></div>';
                 const veil = document.createElement('div');
                 veil.className = 'egg-veil';
                 const close = document.createElement('button');
@@ -3189,13 +3230,26 @@
                 document.body.append(wrap, veil, close);
 
                 const v = wrap.querySelector('video');
+                let ready = false;
+                // בטלפון (מסך מגע) במצב אנכי - מבקשים להטות. במחשב הסרטון מתנגן ישר.
+                const needRotate = () => window.matchMedia('(pointer: coarse)').matches && window.innerHeight > window.innerWidth;
+                function syncOrientation() {
+                    const rotate = needRotate();
+                    wrap.classList.toggle('need-rotate', rotate);
+                    if (rotate) v.pause();
+                    else if (ready) v.play().catch(() => { v.muted = true; v.play().catch(() => { }); });
+                }
+                syncOrientation();
+                window.addEventListener('resize', syncOrientation);
+                window.addEventListener('orientationchange', syncOrientation);
+
                 requestAnimationFrame(() => requestAnimationFrame(() => veil.classList.add('gone')));
-                setTimeout(() => {
-                    v.play().catch(() => { v.muted = true; v.play().catch(() => { }); });
-                }, 700);
+                setTimeout(() => { ready = true; syncOrientation(); }, 700);
                 setTimeout(() => close.classList.add('show'), 3000);
 
                 close.addEventListener('click', () => {
+                    window.removeEventListener('resize', syncOrientation);
+                    window.removeEventListener('orientationchange', syncOrientation);
                     v.pause();
                     wrap.remove(); veil.remove(); close.remove();
                     eggTargets.forEach(el => {
