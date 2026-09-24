@@ -2052,7 +2052,8 @@
                         chip.innerHTML = '<span class="dow">' + DOW[d.getDay()] + '</span><span class="num">' + d.getDate() + '</span>' +
                             (holiday
                                 ? '<span class="chip-holiday" style="color:' + HOLIDAY_TYPE_META[holiday.type].color + '">' + escapeHtml(holidayLabel(holiday, true)) + '</span>'
-                                : '<span class="dots">' + dotTypes.map(t => '<span style="background:' + TYPE_META[t].color + '"></span>').join('') + '</span>');
+                                : '') +
+                            '<span class="dots">' + dotTypes.map(t => '<span style="background:' + TYPE_META[t].color + '"></span>').join('') + '</span>';
                         if (holiday && !sameDate(d, state.selectedDate)) {
                             chip.style.background = HOLIDAY_TYPE_META[holiday.type].bg;
                             chip.style.borderColor = HOLIDAY_TYPE_META[holiday.type].color;
