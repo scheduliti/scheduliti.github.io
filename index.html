@@ -1423,6 +1423,112 @@
                 font-size: 14px;
                 margin-bottom: 18px
             }
+        /* אפקט מיוחד */
+        html.egg-flash * {
+            transition: none !important;
+        }
+
+        @keyframes eggShake {
+            0%, 100% {
+                translate: 0 0;
+                rotate: 0deg;
+            }
+
+            25% {
+                translate: -2px 1px;
+                rotate: -.6deg;
+            }
+
+            50% {
+                translate: 2px -1px;
+                rotate: .5deg;
+            }
+
+            75% {
+                translate: -1px -2px;
+                rotate: -.4deg;
+            }
+        }
+
+        .egg-shake {
+            animation: eggShake .2s linear infinite;
+            animation-delay: var(--shake-delay, 0s);
+        }
+
+        @keyframes eggFall {
+            0% {
+                translate: 0 0;
+                rotate: 0deg;
+            }
+
+            15% {
+                translate: 0 -6px;
+                rotate: -2deg;
+            }
+
+            100% {
+                translate: 0 130vh;
+                rotate: var(--rot, 40deg);
+            }
+        }
+
+        .egg-falling {
+            animation: eggFall var(--dur, 1.2s) cubic-bezier(.5, 0, 1, .5) var(--delay, 0s) forwards;
+            pointer-events: none;
+        }
+
+        .egg-video-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 9997;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .egg-video-wrap video {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }
+
+        /* "מסך" באותו צבע של הרקע, שנעשה שקוף לאט וחושף את הסרטון */
+        .egg-veil {
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            background: radial-gradient(520px 320px at 100% -4%, var(--glow1), transparent 70%), radial-gradient(460px 300px at -5% 38%, var(--glow2), transparent 70%), var(--bg);
+            opacity: 1;
+            transition: opacity 3.5s ease;
+            pointer-events: none;
+        }
+
+            .egg-veil.gone {
+                opacity: 0;
+            }
+
+        .egg-close {
+            position: fixed;
+            top: calc(14px + env(safe-area-inset-top, 0px));
+            left: 14px;
+            z-index: 9999;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 0;
+            background: rgba(255,255,255,.22);
+            color: #fff;
+            font-size: 18px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .6s ease;
+        }
+
+            .egg-close.show {
+                opacity: 1;
+                pointer-events: auto;
+            }
     </style>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -1916,6 +2022,7 @@
             const MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
             function pad(n) { return String(n).padStart(2, '0'); }
             function toDateStr(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+            function shortDate(s) { const p = s.split('-'); return (+p[2]) + '.' + (+p[1]); }
             function parseDateStr(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
             function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
             function startOfWeek(d) { const r = new Date(d); const day = r.getDay(); return addDays(r, -day); }
@@ -1966,8 +2073,10 @@
                 if (meta) meta.setAttribute('content', DATA.settings.theme === 'dark' ? '#1e1119' : '#fff4f7');
             }
             document.getElementById('themeToggle').addEventListener('click', () => {
+                if (eggBusy) return;
                 DATA.settings.theme = DATA.settings.theme === 'dark' ? 'light' : 'dark';
                 applyTheme(); saveData(); renderSettings();
+                eggRegisterClick();
             });
 
             const navIcons = { schedule: ICONS.calendar, clients: ICONS.users, finance: ICONS.wallet, settings: ICONS.settings };
@@ -2452,7 +2561,7 @@
                             ${c.learned ? '<div class="section-title">📖 מה למדו עד כה</div><div class="prose">' + escapeHtml(c.learned) + '</div>' : ''}
                             ${c.notes ? '<div class="section-title">📝 הערות</div><div class="prose">' + escapeHtml(c.notes) + '</div>' : ''}
                             <div class="section-title">שיעורים קרובים</div>
-                            ${upcoming.length ? upcoming.map(e => `<div class="ev-card" style="--c:${TYPE_META.lesson.color};--cbg:${TYPE_META.lesson.bg}"><div class="ev-time"><div class="t1">${e.startTime}</div><div class="t2">${e.date.slice(5)}</div></div>
+                            ${upcoming.length ? upcoming.map(e => `<div class="ev-card" style="--c:${TYPE_META.lesson.color};--cbg:${TYPE_META.lesson.bg}"><div class="ev-time"><div class="t1">${e.startTime}</div><div class="t2">${shortDate(e.date)}</div></div>
                               <div class="ev-body"><div class="ev-title">${escapeHtml(e.title || 'שיעור פרטי')}</div>
                               <div class="row-btns">
                                 <button class="btn btn-ghost btn-sm" data-checkin="${e.id}">${ICONS.check} התקיים</button>
@@ -2610,16 +2719,13 @@
                     totalHours += hrs; totalTips += (ev.commission || 0); totalIncome += income;
                 });
 
-                const summaryHtml = Object.keys(byKind).map(k => {
-                    const s = byKind[k];
-                    return `<div class="client-card" style="margin-bottom:8px;">
-                            <div style="display:flex;justify-content:space-between;align-items:center;">
-                              <div style="font-weight:700;">${s.emo} ${escapeHtml(k)}</div>
-                              <div style="font-weight:800;color:var(--accent);">${money(s.income)}</div>
-                            </div>
-                            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${s.count} משמרות · ${s.hours.toFixed(1)} שעות${s.tips ? ' · טיפים ' + money(s.tips) : ''}</div>
-                          </div>`;
-                }).join('') || '<div class="empty-note">אין משמרות שהושלמו בחודש זה</div>';
+                const summaryHtml = shifts.length ? `<div class="client-card" style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-weight:700;">🥤 כל המשמרות</div>
+          <div style="font-weight:800;color:var(--accent);">${money(totalIncome)}</div>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${shifts.length} משמרות · ${totalHours.toFixed(1)} שעות${totalTips ? ' · טיפים ' + money(totalTips) : ''}</div>
+      </div>` : '<div class="empty-note">אין משמרות שהושלמו בחודש זה</div>';
 
                 const listHtml = shifts.map(ev => {
                     const { start, end } = eventRange(ev);
@@ -2629,7 +2735,7 @@
                     return `<div class="ev-card" style="--c:var(--shift);--cbg:var(--shift-bg);">
                             <div class="ev-time"><div class="t1">${ev.startTime}</div><div class="t2">${ev.endTime}</div></div>
                             <div class="ev-body">
-                              <div class="ev-title-row"><span class="ev-icon"><i class="emo">${kind.emo}</i></span><span class="ev-title">${escapeHtml(kind.label)} · ${ev.date.slice(5)}</span></div>
+                              <div class="ev-title-row"><span class="ev-icon"><i class="emo">${kind.emo}</i></span><span class="ev-title">${escapeHtml(kind.label)} · ${shortDate(ev.date)}</span></div>
                               <div class="ev-meta">${hrs.toFixed(1)} שעות · ${money(income)}${ev.commission ? ' (כולל טיפים ' + money(ev.commission) + ')' : ''}</div>
                             </div>
                           </div>`;
@@ -2638,9 +2744,9 @@
                 document.getElementById('finDetailBody').innerHTML = `
                         <div class="modal-title">🥤 פירוט הכנסות ממשמרות</div>
                         <div class="empty-note" style="padding:2px 0 14px;text-align:right;">${MONTHS[m]} ${y} · סה"כ ${money(totalIncome)} מתוך ${totalHours.toFixed(1)} שעות${totalTips ? ' וטיפים ' + money(totalTips) : ''}</div>
-                        <div class="section-title" style="margin-top:0;">סיכום לפי סוג משמרת</div>
+                        <div class="section-title" style="margin-top:0;">סיכום</div>
                         ${summaryHtml}
-                        <div class="section-title">כל המשמרות</div>
+                        <div class="section-title">פירוט</div>
                         ${listHtml || '<div class="empty-note">אין משמרות שהושלמו בחודש זה</div>'}
                       `;
                 document.getElementById('modalFinanceDetail').classList.add('open');
@@ -2704,7 +2810,7 @@
                     const price = ev.price != null ? ev.price : DATA.settings.lessonPrice;
                     const student = ev.clientId ? DATA.clients.find(c => c.id === ev.clientId) : null;
                     return `<div class="ev-card" style="--c:var(--lesson);--cbg:var(--lesson-bg);">
-                            <div class="ev-time"><div class="t1">${ev.startTime}</div><div class="t2">${ev.date.slice(5)}</div></div>
+                            <div class="ev-time"><div class="t1">${ev.startTime}</div><div class="t2">${shortDate(ev.date)}</div></div>
                             <div class="ev-body">
                               <div class="ev-title-row"><span class="ev-icon"><i class="emo">📚</i></span><span class="ev-title">${escapeHtml(student ? student.name : (ev.title || 'שיעור פרטי'))}</span></div>
                               <div class="ev-meta">${money(price)}${ev.status === 'late-cancel' ? ' · ביטול מאוחר (מחויב)' : ''}</div>
@@ -3009,7 +3115,98 @@
                 document.body.appendChild(a); a.click(); document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }
+            /* ---------------- אפקט מיוחד ---------------- */
+            let eggClicks = 0, eggLast = 0, eggBusy = false, eggTargets = [];
 
+            const EGG_SEL = '.topbar, .segmented, .datenav > *, .holiday-banner, .daychip, .month-dow, .month-cell, .ev-card, .agenda-empty, .card, .stat, .client-card, .section-title, .fab, .bottomnav-inner';
+
+            function eggRegisterClick() {
+                if (eggBusy) return;
+                const now = Date.now();
+                eggClicks = (now - eggLast < 1500) ? eggClicks + 1 : 1; // עד 1.5 שנ' בין לחיצות
+                eggLast = now;
+                if (eggClicks >= 6) { eggClicks = 0; runEasterEgg(); }
+            }
+
+            // שלב 1: הבהוב שמתחיל איטי ומתגבר (לא יורד מ-220ms בין החלפות)
+            function runEasterEgg() {
+                eggBusy = true;
+                const root = document.documentElement;
+                let cur = root.getAttribute('data-theme'), i = 0;
+                root.classList.add('egg-flash');
+                (function step() {
+                    cur = cur === 'dark' ? 'light' : 'dark';
+                    root.setAttribute('data-theme', cur);
+                    if (++i >= 12) {
+                        root.classList.remove('egg-flash');
+                        applyTheme(); // חוזר למצב האמיתי של האפליקציה
+                        eggCollapse();
+                        return;
+                    }
+                    setTimeout(step, Math.max(220, 900 * Math.pow(0.85, i)));
+                })();
+            }
+
+            // שלב 2: רעידה קלה ואז קריסה. מה שנמצא למטה נופל ראשון
+            function eggCollapse() {
+                const vh = window.innerHeight || 800;
+                const all = Array.from(document.querySelectorAll(EGG_SEL)).filter(el => el.getBoundingClientRect().height > 0);
+                const set = new Set(all);
+                // רק האלמנט החיצוני ביותר, כדי שלא ייפול פעמיים
+                eggTargets = all.filter(el => { for (let p = el.parentElement; p; p = p.parentElement) if (set.has(p)) return false; return true; });
+                const tops = eggTargets.map(el => el.getBoundingClientRect().top);
+
+                eggTargets.forEach(el => {
+                    el.style.setProperty('--shake-delay', (-Math.random() * 0.2).toFixed(2) + 's');
+                    el.classList.add('egg-shake');
+                });
+
+                setTimeout(() => {
+                    document.body.style.overflow = 'hidden';
+                    eggTargets.forEach((el, i) => {
+                        const fromBottom = 1 - Math.min(Math.max(tops[i] / vh, 0), 1);
+                        el.classList.remove('egg-shake');
+                        el.style.setProperty('--delay', (fromBottom * 0.6 + Math.random() * 0.5).toFixed(2) + 's');
+                        el.style.setProperty('--dur', (0.9 + Math.random() * 0.8).toFixed(2) + 's');
+                        el.style.setProperty('--rot', ((Math.random() - 0.5) * 100).toFixed(0) + 'deg');
+                        el.classList.add('egg-falling');
+                    });
+                    setTimeout(eggReveal, 3200);
+                }, 900);
+            }
+
+            // שלב 3: הרקע נעשה שקוף לאט והסרטון מופיע מאחוריו
+            function eggReveal() {
+                const wrap = document.createElement('div');
+                wrap.className = 'egg-video-wrap';
+                wrap.innerHTML = '<video src="./us.mp4" playsinline loop controls></video>';
+                const veil = document.createElement('div');
+                veil.className = 'egg-veil';
+                const close = document.createElement('button');
+                close.className = 'egg-close';
+                close.setAttribute('aria-label', 'סגירה');
+                close.textContent = '✕';
+                document.body.append(wrap, veil, close);
+
+                const v = wrap.querySelector('video');
+                requestAnimationFrame(() => requestAnimationFrame(() => veil.classList.add('gone')));
+                setTimeout(() => {
+                    v.play().catch(() => { v.muted = true; v.play().catch(() => { }); });
+                }, 700);
+                setTimeout(() => close.classList.add('show'), 3000);
+
+                close.addEventListener('click', () => {
+                    v.pause();
+                    wrap.remove(); veil.remove(); close.remove();
+                    eggTargets.forEach(el => {
+                        el.classList.remove('egg-falling', 'egg-shake');
+                        ['--delay', '--dur', '--rot', '--shake-delay'].forEach(p => el.style.removeProperty(p));
+                    });
+                    eggTargets = [];
+                    document.body.style.overflow = '';
+                    eggBusy = false;
+                });
+            }
             /* ---------------- INIT ---------------- */
             function renderAll() {
                 autoFinalizeLessons();
