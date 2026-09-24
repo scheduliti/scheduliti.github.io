@@ -3231,6 +3231,10 @@
 
                 const v = wrap.querySelector('video');
                 let ready = false;
+                v.addEventListener('ended', () => {
+                    exitVideoFullscreen();
+                    setTimeout(() => { location.reload(); }, 300);
+                });
                 // בטלפון (מסך מגע) במצב אנכי - מבקשים להטות. במחשב הסרטון מתנגן ישר.
                 const needRotate = () => window.matchMedia('(pointer: coarse)').matches && window.innerHeight > window.innerWidth;
                 function requestVideoFullscreen() {
