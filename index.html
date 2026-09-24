@@ -362,6 +362,7 @@
         }
 
         .mc-holiday {
+            flex: none;
             font-size: 6.5px;
             font-weight: 700;
             line-height: 1;
@@ -602,12 +603,20 @@
 
         .mc-num {
             font-size: 13px;
+            line-height: 1.2;
             font-weight: 700;
         }
 
         .mc-dots {
+            flex: none;
+            position: absolute;
+            bottom: 5px;
+            left: 0;
+            right: 0;
             display: flex;
+            justify-content: center;
             gap: 2px;
+            min-height: 4px;
         }
 
             .mc-dots span {
