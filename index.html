@@ -1314,6 +1314,106 @@
             margin: 8px 0 24px;
             max-width: 290px;
         }
+        /* ticker */
+        .ticker {
+            direction: ltr;
+            overflow: hidden;
+            margin-top: 10px;
+            background: var(--accent-soft);
+            border: 1.5px solid var(--border);
+            border-radius: 14px;
+            padding: 7px 0;
+            display: none
+        }
+
+            .ticker.on {
+                display: block
+            }
+
+        .ticker-track {
+            display: flex;
+            width: max-content;
+            animation: tickerMove var(--dur,20s) linear infinite
+        }
+
+        .ticker-group {
+            display: flex;
+            flex: none;
+            align-items: center;
+            gap: 14px;
+            padding-right: 14px
+        }
+
+        .ticker-sep {
+            flex: none;
+            color: var(--accent-2);
+            font-size: 15px;
+            line-height: 1
+        }
+
+        .ticker-item {
+            direction: rtl;
+            unicode-bidi: isolate;
+            white-space: nowrap;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent)
+        }
+
+        @keyframes tickerMove {
+            to {
+                transform: translateX(-50%)
+            }
+        }
+
+        @media (prefers-reduced-motion:reduce) {
+            .ticker-track {
+                animation: none
+            }
+        }
+        /* popup */
+        .popup-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 9000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(60,20,40,.5);
+            backdrop-filter: blur(4px);
+            animation: fadeonly .2s ease
+        }
+
+        .popup-card {
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 26px 22px 20px;
+            max-width: 340px;
+            width: 100%;
+            text-align: center;
+            box-shadow: var(--shadow);
+            animation: slideup .25s ease
+        }
+
+            .popup-card .pe {
+                font-size: 46px;
+                line-height: 1;
+                margin-bottom: 10px
+            }
+
+            .popup-card h3 {
+                font-size: 19px;
+                font-weight: 800;
+                margin-bottom: 8px
+            }
+
+            .popup-card .prose {
+                color: var(--text-muted);
+                font-size: 14px;
+                margin-bottom: 18px
+            }
     </style>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -1327,7 +1427,7 @@
         <span class="float" style="top:18%;left:10%;animation-delay:-1.5s;">📚</span>
         <span class="float" style="bottom:14%;right:16%;animation-delay:-3s;">🍹</span>
         <span class="float" style="bottom:22%;left:14%;animation-delay:-2s;">🌸</span>
-        <video id="splashVideo" class="logo" src="./levhilit.mp4"  autoplay muted playsinline webkit-playsinline style="object-fit:cover;background:transparent;"></video>
+        <video id="splashVideo" class="logo" src="./levhilit.mp4" autoplay muted playsinline webkit-playsinline style="object-fit:cover;background:transparent;"></video>
         <div id="loginContent" style="display:none;">
             <h1>הלו"ז של הילית</h1>
             <p>שיעורים, משמרות ותלמידים – הכול במקום אחד. נדרשת התחברות מאובטחת.</p>
@@ -1342,6 +1442,7 @@
                 <div class="greet" id="greetText">שלום</div>
                 <button class="icon-btn" id="themeToggle" aria-label="מצב תצוגה"></button>
             </div>
+            <div class="ticker" id="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
         </div>
 
         <main>
@@ -1711,6 +1812,7 @@
             function sharedDocRef() { return db.collection(SHARED_COLLECTION).doc(SHARED_DOC_ID); }
 
             function startRealtimeSync() {
+                startAnnouncementsSync();
                 const docRef = sharedDocRef();
                 dbUnsubscribe = docRef.onSnapshot(doc => {
                     if (doc.exists) {
@@ -1733,7 +1835,47 @@
                     }
                 });
             }
-
+            /* ---------------- הודעות רצות ופופאפ ---------------- */
+            let annUnsubscribe = null, popupShownId = null;
+            function startAnnouncementsSync() {
+                if (annUnsubscribe) annUnsubscribe();
+                annUnsubscribe = db.collection('announcements').doc('config').onSnapshot(doc => {
+                    const d = doc.exists ? doc.data() : {};
+                    renderTicker(d.ticker || [], d.tickerSpeed || 45);
+                    maybeShowPopup(d.popup);
+                }, err => console.warn('announcements:', err));
+            }
+            function renderTicker(items, speed) {
+                const box = document.getElementById('ticker'), track = document.getElementById('tickerTrack');
+                if (!items.length) { box.classList.remove('on'); track.innerHTML = ''; return; }
+                const unit = items.map(m => '<span class="ticker-item">' + escapeHtml(m.text) + '</span><span class="ticker-sep">•</span>').join('');
+                box.classList.add('on');
+                // מודדים סבב אחד של ההודעות ומכפילים אותו עד שהוא רחב יותר מהמסך
+                track.innerHTML = '<div class="ticker-group">' + unit + '</div>';
+                const unitW = track.firstElementChild.offsetWidth;
+                const reps = Math.max(1, Math.ceil(box.offsetWidth / unitW));
+                const group = '<div class="ticker-group">' + unit.repeat(reps) + '</div>';
+                track.innerHTML = group + group;
+                const w = track.firstElementChild.offsetWidth;
+                track.style.setProperty('--dur', Math.max(8, w / speed) + 's');
+            }
+            function maybeShowPopup(p) {
+                if (!p || !p.enabled || !p.id || popupShownId === p.id) return;
+                const key = 'hilit_popup_seen_' + p.id;
+                try { if (localStorage.getItem(key)) return; } catch (e) { return; }
+                popupShownId = p.id;
+                try { localStorage.setItem(key, '1'); } catch (e) { /* ignore */ }
+                setTimeout(() => {
+                    const w = document.createElement('div');
+                    w.className = 'popup-wrap';
+                    w.innerHTML = '<div class="popup-card">' + (p.emoji ? '<div class="pe">' + escapeHtml(p.emoji) + '</div>' : '') +
+                        (p.title ? '<h3>' + escapeHtml(p.title) + '</h3>' : '') +
+                        (p.body ? '<div class="prose">' + escapeHtml(p.body) + '</div>' : '') +
+                        '<button class="btn btn-primary">' + escapeHtml(p.button || 'הבנתי') + '</button></div>';
+                    w.querySelector('button').addEventListener('click', () => w.remove());
+                    document.body.appendChild(w);
+                }, 700);
+            }
             function saveData() {
                 if (saveTimer) clearTimeout(saveTimer);
                 saveTimer = setTimeout(() => { saveDataToFirebase(); }, 500);
