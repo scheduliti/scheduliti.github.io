@@ -1438,6 +1438,27 @@
             </div>
         </div>
 
+        <!-- Modal: Finance detail -->
+        <div class="modal-wrap" id="modalFinanceDetail">
+            <div class="modal-backdrop" data-close="modalFinanceDetail"></div>
+            <div class="modal">
+                <button class="modal-close" data-close="modalFinanceDetail"></button>
+                <div class="modal-handle"></div>
+                <div id="finDetailBody"></div>
+            </div>
+        </div>
+
+        <!-- Modal: Recurring events manager -->
+        <div class="modal-wrap" id="modalRecurring">
+            <div class="modal-backdrop" data-close="modalRecurring"></div>
+            <div class="modal">
+                <button class="modal-close" data-close="modalRecurring"></button>
+                <div class="modal-handle"></div>
+                <div class="modal-title">אירועים חוזרים</div>
+                <div id="recurringBody"></div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -1465,7 +1486,8 @@
                 check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
                 bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
                 star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5l2.9 6.4 6.9.7-5.2 4.7 1.6 6.9L12 17.8 5.8 21.2l1.6-6.9L2.2 9.6l6.9-.7z"/></svg>',
-                download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4.5-4.5M12 15l4.5-4.5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>'
+                download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4.5-4.5M12 15l4.5-4.5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>',
+                repeat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.6v-1.5A4 4 0 0 1 7 7h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.4v1.5A4 4 0 0 1 17 17H3"/></svg>'
             };
 
             /* ---------------- CONFIG ---------------- */
@@ -1970,10 +1992,11 @@
                     if (ev.type === 'shift' && ev.commission) metaLine = 'טיפים: ' + money(ev.commission);
                     let warnHtml = '';
                     if (conflicts.length) warnHtml += '<div class="ev-warn">' + ICONS.warn + ' חפיפה עם ' + conflicts.length + ' פעילות/יות</div>';
+                    let recurHtml = ev.recurringId ? '<span class="ev-tag" style="background:var(--surface-2);color:var(--text-muted);margin-inline-start:6px;">' + ICONS.repeat.replace('width="14" height="14"','') + ' חוזר</span>' : '';
                     card.innerHTML = '<div class="ev-time"><div class="t1">' + ev.startTime + '</div><div class="t2">' + ev.endTime + '</div></div>' +
                         '<div class="ev-body"><div class="ev-title-row"><span class="ev-icon">' + meta.icon + '</span><span class="ev-title">' + escapeHtml(ev.title || meta.label) + '</span></div>' +
                         (metaLine ? '<div class="ev-meta">' + escapeHtml(metaLine) + '</div>' : '') +
-                        '<span class="ev-tag">' + meta.label + '</span>' + warnHtml + '</div>';
+                        '<span class="ev-tag">' + meta.label + '</span>' + (ev.recurringId ? ' <span class="ev-tag" style="background:var(--surface-2);color:var(--text-muted);">🔁 חוזר</span>' : '') + warnHtml + '</div>';
                     card.addEventListener('click', () => openEventModal(ev.id));
                     holder.appendChild(card);
                 });
@@ -1995,7 +2018,7 @@
                 const draft = ev ? Object.assign({}, ev) : {
                     id: null, type: 'lesson', title: '', date: presetDate || toDateStr(state.selectedDate),
                     startTime: '16:00', endTime: '17:00', useBuffer: true, notes: '',
-                    clientId: '', commission: 0, price: DATA.settings.lessonPrice
+                    clientId: '', commission: 0, price: DATA.settings.lessonPrice, recurring: false
                 };
                 renderEventForm(draft);
                 document.getElementById('modalEvent').classList.add('open');
@@ -2025,6 +2048,7 @@
                           <div><div class="t-main">חסימת זמן נסיעה/התארגנות</div><div class="t-sub">${DATA.settings.bufferMinutes} דק' לפני ואחרי</div></div>
                           <div class="switch ${draft.useBuffer !== false ? 'on' : ''}" id="f_buffer"></div>
                         </div>
+                        <div id="recurringBox"></div>
                         <label>הערות</label>
                         <textarea id="f_notes" rows="2" placeholder="הערות חופשיות...">${escapeHtml(draft.notes || '')}</textarea>
                         <div id="conflictBox"></div>
@@ -2041,10 +2065,12 @@
                         document.querySelectorAll('#typePicker .type-opt').forEach(b => b.classList.toggle('selected', b === btn));
                         document.getElementById('f_title').placeholder = TYPE_META[draft.type].label;
                         renderTypeExtra(draft);
+                        renderRecurringBox(draft);
                         refreshConflictPreview(draft);
                     });
                 });
                 renderTypeExtra(draft);
+                renderRecurringBox(draft);
 
                 ['f_date', 'f_start', 'f_end'].forEach(id => document.getElementById(id).addEventListener('change', () => { updatePresetSel(); refreshConflictPreview(draft); }));
                 function updatePresetSel() {
@@ -2052,13 +2078,27 @@
                     document.querySelectorAll('#shiftPresets .preset').forEach(b => b.classList.toggle('selected', b.dataset.s === st && b.dataset.e === en));
                 }
 
+                function renderRecurringBox(d) {
+                    const box = document.getElementById('recurringBox');
+                    // אפשרות "אירוע חוזר" זמינה רק בהוספת פעילות חדשה (לא בעריכת פעילות בודדת), ורק למשמרות/שיעורים
+                    if (d.id || (d.type !== 'shift' && d.type !== 'lesson')) { box.innerHTML = ''; return; }
+                    box.innerHTML = `<div class="toggle-row">
+                          <div><div class="t-main">אירוע חוזר 🔁</div><div class="t-sub">כל שבוע, באותו יום ואותה שעה, למשך שנה קדימה</div></div>
+                          <div class="switch ${d.recurring ? 'on' : ''}" id="f_recurring"></div>
+                        </div>`;
+                    document.getElementById('f_recurring').addEventListener('click', function () {
+                        this.classList.toggle('on');
+                        d.recurring = this.classList.contains('on');
+                    });
+                }
+
                 function renderTypeExtra(d) {
                     const box = document.getElementById('typeExtra');
                     if (d.type === 'shift') {
                         box.innerHTML = `<label>משמרת מהירה (מעדכן את השעות)</label>
                           <div class="preset-row" id="shiftPresets">
-                            <button type="button" class="preset" data-s="07:00" data-e="14:00">🌅 משמרת בוקר<small>07:00–14:00</small></button>
-                            <button type="button" class="preset" data-s="14:00" data-e="21:00">🌙 משמרת ערב<small>14:00–21:00</small></button>
+                            <button type="button" class="preset" data-s="07:00" data-e="14:30">🌅 משמרת בוקר<small>07:00–14:30</small></button>
+                            <button type="button" class="preset" data-s="14:00" data-e="21:30">🌙 משמרת ערב<small>14:00–21:30</small></button>
                           </div>
                           <label>טיפים / בונוס במשמרת (₪)</label><input type="number" id="f_comm" value="${d.commission || 0}" min="0" step="5">`;
                         document.querySelectorAll('#shiftPresets .preset').forEach(b => b.addEventListener('click', () => {
@@ -2072,6 +2112,15 @@
                         box.innerHTML = `<label>תלמיד/ה</label>
                           <select id="f_client"><option value="">— ללא שיוך —</option>${students.map(c => `<option value="${c.id}" ${d.clientId === c.id ? 'selected' : ''}>${escapeHtml(c.name)}${c.subject ? ' (' + escapeHtml(c.subject) + ')' : ''}</option>`).join('')}</select>
                           <label>מחיר השיעור (₪)</label><input type="number" id="f_price" value="${d.price != null ? d.price : DATA.settings.lessonPrice}" min="0" step="5">`;
+                        document.getElementById('f_client').addEventListener('change', function () {
+                            const chosen = students.find(c => c.id === this.value);
+                            const priceInput = document.getElementById('f_price');
+                            if (chosen && chosen.price != null && chosen.price !== '') {
+                                priceInput.value = chosen.price;
+                            } else {
+                                priceInput.value = DATA.settings.lessonPrice;
+                            }
+                        });
                     } else {
                         box.innerHTML = '';
                     }
@@ -2114,6 +2163,24 @@
                     } else {
                         draft.id = uid();
                         if (draft.type === 'lesson') draft.status = 'scheduled';
+                        if (draft.recurring && (draft.type === 'shift' || draft.type === 'lesson')) {
+                            const recurringId = uid();
+                            const occurrences = 52; // כל שבוע, לשנה קדימה
+                            const baseDate = parseDateStr(draft.date);
+                            for (let i = 0; i < occurrences; i++) {
+                                const occDate = addDays(baseDate, i * 7);
+                                const occ = Object.assign({}, draft, { id: (i === 0 ? draft.id : uid()), date: toDateStr(occDate), recurringId: recurringId });
+                                delete occ.recurring;
+                                if (occ.type === 'lesson') occ.status = 'scheduled';
+                                DATA.events.push(occ);
+                            }
+                            saveData();
+                            closeModal('modalEvent');
+                            renderSchedule();
+                            if (state.view === 'finance') renderFinance();
+                            return;
+                        }
+                        delete draft.recurring;
                         DATA.events.push(draft);
                     }
                     saveData();
@@ -2164,7 +2231,7 @@
                 state.editingClientId = id;
                 const c = id ? DATA.clients.find(x => x.id === id) : null;
                 document.getElementById('clModalTitle').textContent = c ? 'עריכת תלמיד/ה' : 'תלמיד/ה חדש/ה';
-                const draft = c ? Object.assign({}, c) : { id: null, name: '', phone: '', subject: '', age: '', progress: 0, learned: '', notes: '', history: [] };
+                const draft = c ? Object.assign({}, c) : { id: null, name: '', phone: '', subject: '', age: '', progress: 0, learned: '', notes: '', history: [], price: '' };
                 document.getElementById('clModalBody').innerHTML = `
                         <label>שם מלא</label><input id="c_name" value="${escapeHtml(draft.name)}">
                         <div class="field-row">
@@ -2172,6 +2239,8 @@
                           <div style="flex:.6"><label>גיל</label><input id="c_age" type="number" min="1" max="99" value="${escapeHtml(draft.age || '')}"></div>
                         </div>
                         <label>טלפון (תלמיד/ה או הורה)</label><input id="c_phone" value="${escapeHtml(draft.phone || '')}" type="tel">
+                        <label>מחיר קבוע לשיעור (₪) <span style="font-weight:400;">— אם לא מוגדר, ישמש המחיר הכללי מההגדרות</span></label>
+                        <input id="c_price" type="number" min="0" step="5" value="${draft.price != null ? escapeHtml(draft.price) : ''}" placeholder="${DATA.settings.lessonPrice}">
                         <label>התקדמות: <b id="c_prog_val" style="color:var(--accent)">${draft.progress || 0}%</b></label>
                         <input id="c_prog" type="range" min="0" max="100" step="5" value="${draft.progress || 0}">
                         <label>מה למדו עד כה</label><textarea id="c_learned" rows="4" placeholder="נושאים, פרקים, מיומנויות שכבר נלמדו...">${escapeHtml(draft.learned || '')}</textarea>
@@ -2188,6 +2257,8 @@
                     const age = parseInt(document.getElementById('c_age').value);
                     draft.age = isNaN(age) ? '' : age;
                     draft.phone = document.getElementById('c_phone').value.trim();
+                    const priceVal = document.getElementById('c_price').value;
+                    draft.price = priceVal === '' ? '' : (parseFloat(priceVal) || 0);
                     draft.progress = parseInt(document.getElementById('c_prog').value) || 0;
                     draft.learned = document.getElementById('c_learned').value.trim();
                     draft.notes = document.getElementById('c_notes').value.trim();
@@ -2216,7 +2287,7 @@
                 const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
                 const upcoming = DATA.events.filter(e => e.type === 'lesson' && e.clientId === id && e.status === 'scheduled' && parseDateStr(e.date) >= todayStart).sort((a, b) => a.date.localeCompare(b.date));
                 const history = (c.history || []).slice().reverse();
-                const chips = (c.subject ? '<span class="chip">' + escapeHtml(c.subject) + '</span>' : '') + (c.age ? '<span class="chip soft">גיל ' + escapeHtml(c.age) + '</span>' : '') + (c.phone ? '<span class="chip soft">' + escapeHtml(c.phone) + '</span>' : '');
+                const chips = (c.subject ? '<span class="chip">' + escapeHtml(c.subject) + '</span>' : '') + (c.age ? '<span class="chip soft">גיל ' + escapeHtml(c.age) + '</span>' : '') + (c.phone ? '<span class="chip soft">' + escapeHtml(c.phone) + '</span>' : '') + (c.price != null && c.price !== '' ? '<span class="chip soft">' + money(c.price) + ' לשיעור</span>' : '');
                 document.getElementById('clDetailBody').innerHTML = `
                         <div class="modal-title">${escapeHtml(c.name)}</div>
                         ${chips ? '<div class="chips" style="margin:0 0 12px;">' + chips + '</div>' : ''}
@@ -2294,6 +2365,12 @@
             document.getElementById('finPrev').addEventListener('click', () => { const d = new Date(state.financeMonth); d.setMonth(d.getMonth() - 1); state.financeMonth = d; renderFinance(); });
             document.getElementById('finNext').addEventListener('click', () => { const d = new Date(state.financeMonth); d.setMonth(d.getMonth() + 1); state.financeMonth = d; renderFinance(); });
 
+            function shiftKindLabel(ev) {
+                if (ev.startTime === '07:00' && ev.endTime === '14:30') return { label: 'משמרת בוקר', emo: '🌅' };
+                if (ev.startTime === '14:00' && ev.endTime === '21:30') return { label: 'משמרת ערב', emo: '🌙' };
+                return { label: 'משמרת דינמית', emo: '🥤' };
+            }
+
             function renderFinance() {
                 const y = state.financeMonth.getFullYear(), m = state.financeMonth.getMonth();
                 document.getElementById('finLabel').textContent = MONTHS[m] + ' ' + y;
@@ -2324,8 +2401,12 @@
                           <div style="font-size:36px;font-weight:800;font-variant-numeric:tabular-nums;">${money(totalIncome)}</div>
                         </div>
                         <div class="stat-grid">
-                          <div class="stat"><div class="si">🥤</div><div class="num">${money(shiftIncome)}</div><div class="lbl">הכנסה ממיציפי</div></div>
-                          <div class="stat"><div class="si">📚</div><div class="num">${money(lessonIncome)}</div><div class="lbl">הכנסה משיעורים</div></div>
+                          <div class="stat" id="statShiftIncome" style="cursor:pointer;">
+                            <div class="si">🥤</div><div class="num">${money(shiftIncome)}</div><div class="lbl">הכנסה ממיציפי (לחצי לפירוט)</div>
+                          </div>
+                          <div class="stat" id="statLessonIncome" style="cursor:pointer;">
+                            <div class="si">📚</div><div class="num">${money(lessonIncome)}</div><div class="lbl">הכנסה משיעורים (לחצי לפירוט)</div>
+                          </div>
                           <div class="stat"><div class="si">⏰</div><div class="num">${shiftHours.toFixed(1)}</div><div class="lbl">שעות במיציפי</div></div>
                           <div class="stat"><div class="si">✏️</div><div class="num">${lessonsHeld}/${lessonsTotal}</div><div class="lbl">שיעורים שבוצעו</div></div>
                           <div class="stat"><div class="si">🎓</div><div class="num">${lessonHours.toFixed(1)}</div><div class="lbl">שעות הוראה</div></div>
@@ -2342,10 +2423,182 @@
                           ${financeBar('הוראה 📚', lessonHours, (shiftHours + lessonHours) || 1, 'var(--lesson)', false)}
                         </div>
                       `;
+                document.getElementById('statShiftIncome').addEventListener('click', () => openShiftFinanceDetail(y, m));
+                document.getElementById('statLessonIncome').addEventListener('click', () => openLessonFinanceDetail(y, m));
             }
             function financeBar(label, val, total, color, isMoney) {
                 const pct = val > 0 ? Math.max(2, Math.min(100, (val / total) * 100)) : 0;
                 return `<div class="bar-row"><span class="lbl">${label}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div><span class="val">${isMoney ? money(val) : val.toFixed(1) + ' שע\''}</span></div>`;
+            }
+
+            function openShiftFinanceDetail(y, m) {
+                const now = new Date();
+                const shifts = DATA.events.filter(e => {
+                    if (e.type !== 'shift') return false;
+                    const d = parseDateStr(e.date);
+                    if (d.getFullYear() !== y || d.getMonth() !== m) return false;
+                    const { end } = eventRange(e);
+                    return end.getTime() <= now.getTime();
+                }).sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+
+                const byKind = {};
+                let totalHours = 0, totalTips = 0, totalIncome = 0;
+                shifts.forEach(ev => {
+                    const { start, end } = eventRange(ev);
+                    const hrs = (end - start) / 3600000;
+                    const income = hrs * DATA.settings.shiftHourlyRate + (ev.commission || 0);
+                    const kind = shiftKindLabel(ev);
+                    if (!byKind[kind.label]) byKind[kind.label] = { emo: kind.emo, count: 0, hours: 0, tips: 0, income: 0 };
+                    byKind[kind.label].count++;
+                    byKind[kind.label].hours += hrs;
+                    byKind[kind.label].tips += (ev.commission || 0);
+                    byKind[kind.label].income += income;
+                    totalHours += hrs; totalTips += (ev.commission || 0); totalIncome += income;
+                });
+
+                const summaryHtml = Object.keys(byKind).map(k => {
+                    const s = byKind[k];
+                    return `<div class="client-card" style="margin-bottom:8px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                          <div style="font-weight:700;">${s.emo} ${escapeHtml(k)}</div>
+                          <div style="font-weight:800;color:var(--accent);">${money(s.income)}</div>
+                        </div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${s.count} משמרות · ${s.hours.toFixed(1)} שעות${s.tips ? ' · טיפים ' + money(s.tips) : ''}</div>
+                      </div>`;
+                }).join('') || '<div class="empty-note">אין משמרות שהושלמו בחודש זה</div>';
+
+                const listHtml = shifts.map(ev => {
+                    const { start, end } = eventRange(ev);
+                    const hrs = (end - start) / 3600000;
+                    const income = hrs * DATA.settings.shiftHourlyRate + (ev.commission || 0);
+                    const kind = shiftKindLabel(ev);
+                    return `<div class="ev-card" style="--c:var(--shift);--cbg:var(--shift-bg);">
+                        <div class="ev-time"><div class="t1">${ev.startTime}</div><div class="t2">${ev.endTime}</div></div>
+                        <div class="ev-body">
+                          <div class="ev-title-row"><span class="ev-icon"><i class="emo">${kind.emo}</i></span><span class="ev-title">${escapeHtml(kind.label)} · ${ev.date.slice(5)}</span></div>
+                          <div class="ev-meta">${hrs.toFixed(1)} שעות · ${money(income)}${ev.commission ? ' (כולל טיפים ' + money(ev.commission) + ')' : ''}</div>
+                        </div>
+                      </div>`;
+                }).join('');
+
+                document.getElementById('finDetailBody').innerHTML = `
+                    <div class="modal-title">🥤 פירוט הכנסות ממשמרות</div>
+                    <div class="empty-note" style="padding:2px 0 14px;text-align:right;">${MONTHS[m]} ${y} · סה"כ ${money(totalIncome)} מתוך ${totalHours.toFixed(1)} שעות${totalTips ? ' וטיפים ' + money(totalTips) : ''}</div>
+                    <div class="section-title" style="margin-top:0;">סיכום לפי סוג משמרת</div>
+                    ${summaryHtml}
+                    <div class="section-title">כל המשמרות</div>
+                    ${listHtml || '<div class="empty-note">אין משמרות שהושלמו בחודש זה</div>'}
+                  `;
+                document.getElementById('modalFinanceDetail').classList.add('open');
+            }
+
+            function openLessonFinanceDetail(y, m) {
+                const held = DATA.events.filter(e => {
+                    if (e.type !== 'lesson') return false;
+                    if (!(e.status === 'attended' || e.status === 'late-cancel')) return false;
+                    const d = parseDateStr(e.date);
+                    return d.getFullYear() === y && d.getMonth() === m;
+                }).sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+
+                const byStudent = {};
+                let totalIncome = 0;
+                held.forEach(ev => {
+                    const price = ev.price != null ? ev.price : DATA.settings.lessonPrice;
+                    const student = ev.clientId ? DATA.clients.find(c => c.id === ev.clientId) : null;
+                    const name = student ? student.name : 'ללא שיוך';
+                    if (!byStudent[name]) byStudent[name] = { count: 0, income: 0 };
+                    byStudent[name].count++;
+                    byStudent[name].income += price;
+                    totalIncome += price;
+                });
+
+                const summaryHtml = Object.keys(byStudent).sort((a, b) => byStudent[b].income - byStudent[a].income).map(name => {
+                    const s = byStudent[name];
+                    return `<div class="client-card" style="margin-bottom:8px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                          <div style="font-weight:700;">📚 ${escapeHtml(name)}</div>
+                          <div style="font-weight:800;color:var(--accent);">${money(s.income)}</div>
+                        </div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${s.count} שיעורים</div>
+                      </div>`;
+                }).join('') || '<div class="empty-note">אין שיעורים שהתקיימו בחודש זה</div>';
+
+                const listHtml = held.map(ev => {
+                    const price = ev.price != null ? ev.price : DATA.settings.lessonPrice;
+                    const student = ev.clientId ? DATA.clients.find(c => c.id === ev.clientId) : null;
+                    return `<div class="ev-card" style="--c:var(--lesson);--cbg:var(--lesson-bg);">
+                        <div class="ev-time"><div class="t1">${ev.startTime}</div><div class="t2">${ev.date.slice(5)}</div></div>
+                        <div class="ev-body">
+                          <div class="ev-title-row"><span class="ev-icon"><i class="emo">📚</i></span><span class="ev-title">${escapeHtml(student ? student.name : (ev.title || 'שיעור פרטי'))}</span></div>
+                          <div class="ev-meta">${money(price)}${ev.status === 'late-cancel' ? ' · ביטול מאוחר (מחויב)' : ''}</div>
+                        </div>
+                      </div>`;
+                }).join('');
+
+                document.getElementById('finDetailBody').innerHTML = `
+                    <div class="modal-title">📚 פירוט הכנסות משיעורים</div>
+                    <div class="empty-note" style="padding:2px 0 14px;text-align:right;">${MONTHS[m]} ${y} · סה"כ ${money(totalIncome)} מתוך ${held.length} שיעורים</div>
+                    <div class="section-title" style="margin-top:0;">סיכום לפי תלמיד/ה</div>
+                    ${summaryHtml}
+                    <div class="section-title">כל השיעורים</div>
+                    ${listHtml || '<div class="empty-note">אין שיעורים שהתקיימו בחודש זה</div>'}
+                  `;
+                document.getElementById('modalFinanceDetail').classList.add('open');
+            }
+
+            /* ---------------- אירועים חוזרים ---------------- */
+            function openRecurringManager() {
+                renderRecurringList();
+                document.getElementById('modalRecurring').classList.add('open');
+            }
+            function renderRecurringList() {
+                const todayStr = toDateStr(new Date());
+                const groups = {};
+                DATA.events.forEach(ev => {
+                    if (!ev.recurringId) return;
+                    if (!groups[ev.recurringId]) groups[ev.recurringId] = [];
+                    groups[ev.recurringId].push(ev);
+                });
+                const ids = Object.keys(groups);
+                const holder = document.getElementById('recurringBody');
+                if (!ids.length) {
+                    holder.innerHTML = '<div class="empty-note">אין כרגע אירועים חוזרים מוגדרים 🌸</div>';
+                    return;
+                }
+                holder.innerHTML = ids.map(rid => {
+                    const list = groups[rid].sort((a, b) => a.date.localeCompare(b.date));
+                    const first = list[0];
+                    const meta = TYPE_META[first.type] || TYPE_META.personal;
+                    const dowLabel = DOW[parseDateStr(first.date).getDay()];
+                    const future = list.filter(e => e.date >= todayStr);
+                    const past = list.length - future.length;
+                    const student = first.type === 'lesson' && first.clientId ? DATA.clients.find(c => c.id === first.clientId) : null;
+                    const nameLine = (first.title ? first.title : meta.label) + (student ? ' · ' + student.name : '');
+                    return `<div class="client-card" style="margin-bottom:10px;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                          <span class="emo">${meta.icon.replace(/<[^>]+>/g,'')}</span>
+                          <div style="flex:1;">
+                            <div style="font-weight:700;">${escapeHtml(nameLine)}</div>
+                            <div style="font-size:12px;color:var(--text-muted);">כל יום ${dowLabel}' · ${first.startTime}–${first.endTime}</div>
+                          </div>
+                        </div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">${future.length} מופעים עתידיים${past ? ' · ' + past + ' כבר עברו' : ''}</div>
+                        <div class="row-btns">
+                          <button class="btn btn-danger btn-sm" data-cancel-recurring="${rid}" ${future.length ? '' : 'disabled style="opacity:.5;"'}>ביטול האירוע החוזר מהיום ואילך</button>
+                        </div>
+                      </div>`;
+                }).join('');
+                holder.querySelectorAll('[data-cancel-recurring]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const rid = btn.dataset.cancelRecurring;
+                        if (!confirm('לבטל את כל המופעים העתידיים של האירוע החוזר הזה (מהיום ואילך)? מופעים שכבר עברו יישארו כמו שהם.')) return;
+                        DATA.events = DATA.events.filter(e => !(e.recurringId === rid && e.date >= todayStr));
+                        saveData();
+                        renderRecurringList();
+                        renderSchedule();
+                        if (state.view === 'finance') renderFinance();
+                    });
+                });
             }
 
             /* ---------------- התראות מקומיות ---------------- */
@@ -2446,15 +2699,23 @@
                 else if (permStatus === 'denied') permNote = 'ההתראות חסומות ברמת הדפדפן/המכשיר. יש לאפשר זאת ידנית בהגדרות המכשיר כדי שהתזכורות יעבדו.';
                 else permNote = 'יש להפעיל את המתג כדי לאשר קבלת התראות מהדפדפן.';
 
+                const recurringCount = new Set(DATA.events.filter(e => e.recurringId).map(e => e.recurringId)).size;
+
                 holder.innerHTML = `
                         <div class="section-title" style="margin-top:0;">💰 תעריפים</div>
                         <div class="card">
                           <label>תעריף שעתי – משמרת במיציפי (₪)</label><input type="number" id="s_rate" value="${s.shiftHourlyRate}" step="0.1">
-                          <label>מחיר שיעור פרטי (₪)</label><input type="number" id="s_price" value="${s.lessonPrice}" step="5">
+                          <label>מחיר שיעור פרטי כללי (₪)</label><input type="number" id="s_price" value="${s.lessonPrice}" step="5">
+                          <div class="empty-note" style="padding:6px 0 0;text-align:right;">אפשר לקבוע מחיר קבוע לכל תלמיד/ה בנפרד בעמוד "תלמידים"</div>
                         </div>
                         <div class="section-title">⏱️ מרווחים</div>
                         <div class="card">
                           <label>זמן נסיעה/התארגנות בין פעילויות (דקות)</label><input type="number" id="s_buffer" value="${s.bufferMinutes}" step="5">
+                        </div>
+                        <div class="section-title">🔁 אירועים חוזרים</div>
+                        <div class="card">
+                          <div class="empty-note" style="padding:6px 0 12px;text-align:right;">${recurringCount ? recurringCount + ' סדרות אירועים חוזרים מוגדרות כרגע.' : 'עדיין לא הוגדרו אירועים חוזרים.'}</div>
+                          <button class="btn btn-ghost" id="openRecurringBtn">${ICONS.repeat} ניהול אירועים חוזרים</button>
                         </div>
                         <div class="section-title">🔔 התראות ותזכורות</div>
                         <div class="card">
@@ -2504,6 +2765,7 @@
                         saveData();
                     });
                 });
+                document.getElementById('openRecurringBtn').addEventListener('click', openRecurringManager);
 
                 function bindNotifSwitch(elId, key) {
                     document.getElementById(elId).addEventListener('click', function () {
