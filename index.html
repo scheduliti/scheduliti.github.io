@@ -2085,7 +2085,8 @@
                         cell.innerHTML = '<span class="mc-num">' + d.getDate() + '</span>' +
                             (holiday
                                 ? '<span class="mc-holiday" style="color:' + HOLIDAY_TYPE_META[holiday.type].color + '">' + escapeHtml(holidayLabel(holiday, true)) + '</span>'
-                                : '<span class="mc-dots">' + dotTypes.map(t => '<span style="background:' + TYPE_META[t].color + '"></span>').join('') + '</span>');
+                                : '') +
+                            '<span class="mc-dots">' + dotTypes.map(t => '<span style="background:' + TYPE_META[t].color + '"></span>').join('') + '</span>';
                         if (holiday && !sameDate(d, state.selectedDate)) {
                             cell.style.background = HOLIDAY_TYPE_META[holiday.type].bg;
                             cell.style.borderColor = HOLIDAY_TYPE_META[holiday.type].color;
@@ -2134,7 +2135,7 @@
                     if (ev.type === 'shift' && ev.commission) metaLine = 'טיפים: ' + money(ev.commission);
                     let warnHtml = '';
                     if (conflicts.length) warnHtml += '<div class="ev-warn">' + ICONS.warn + ' חפיפה עם ' + conflicts.length + ' פעילות/יות</div>';
-                    let recurHtml = ev.recurringId ? '<span class="ev-tag" style="background:var(--surface-2);color:var(--text-muted);margin-inline-start:6px;">' + ICONS.repeat.replace('width="14" height="14"','') + ' חוזר</span>' : '';
+                    let recurHtml = ev.recurringId ? '<span class="ev-tag" style="background:var(--surface-2);color:var(--text-muted);margin-inline-start:6px;">' + ICONS.repeat.replace('width="14" height="14"', '') + ' חוזר</span>' : '';
                     card.innerHTML = '<div class="ev-time"><div class="t1">' + ev.startTime + '</div><div class="t2">' + ev.endTime + '</div></div>' +
                         '<div class="ev-body"><div class="ev-title-row"><span class="ev-icon">' + meta.icon + '</span><span class="ev-title">' + escapeHtml(ev.title || meta.label) + '</span></div>' +
                         (metaLine ? '<div class="ev-meta">' + escapeHtml(metaLine) + '</div>' : '') +
@@ -2172,33 +2173,33 @@
                 const body = document.getElementById('evModalBody');
                 const students = DATA.clients;
                 body.innerHTML = `
-                        <div class="type-picker" id="typePicker">
-                          ${Object.keys(TYPE_META).map(t => `<button class="type-opt ${draft.type === t ? 'selected' : ''}" data-type="${t}" style="--c:${TYPE_META[t].color};--cbg:${TYPE_META[t].bg}">${TYPE_META[t].icon}<span>${TYPE_META[t].label}</span></button>`).join('')}
-                        </div>
-                        <label>כותרת (אופציונלי)</label>
-                        <input id="f_title" value="${escapeHtml(draft.title || '')}" placeholder="${TYPE_META[draft.type].label}">
-                        <div class="field-row">
-                          <div><label>תאריך</label><input type="date" id="f_date" value="${draft.date}"></div>
-                          <div></div>
-                        </div>
-                        <div class="field-row">
-                          <div><label>שעת התחלה</label><input type="time" id="f_start" value="${draft.startTime}"></div>
-                          <div><label>שעת סיום</label><input type="time" id="f_end" value="${draft.endTime}"></div>
-                        </div>
-                        <div id="typeExtra"></div>
-                        <div class="toggle-row">
-                          <div><div class="t-main">חסימת זמן נסיעה/התארגנות</div><div class="t-sub">${DATA.settings.bufferMinutes} דק' לפני ואחרי</div></div>
-                          <div class="switch ${draft.useBuffer !== false ? 'on' : ''}" id="f_buffer"></div>
-                        </div>
-                        <div id="recurringBox"></div>
-                        <label>הערות</label>
-                        <textarea id="f_notes" rows="2" placeholder="הערות חופשיות...">${escapeHtml(draft.notes || '')}</textarea>
-                        <div id="conflictBox"></div>
-                        <div class="row-btns">
-                          ${draft.id ? '<button class="btn btn-danger" id="delEvBtn">מחיקה</button>' : ''}
-                          <button class="btn btn-primary" id="saveEvBtn">שמירה</button>
-                        </div>
-                      `;
+                            <div class="type-picker" id="typePicker">
+                              ${Object.keys(TYPE_META).map(t => `<button class="type-opt ${draft.type === t ? 'selected' : ''}" data-type="${t}" style="--c:${TYPE_META[t].color};--cbg:${TYPE_META[t].bg}">${TYPE_META[t].icon}<span>${TYPE_META[t].label}</span></button>`).join('')}
+                            </div>
+                            <label>כותרת (אופציונלי)</label>
+                            <input id="f_title" value="${escapeHtml(draft.title || '')}" placeholder="${TYPE_META[draft.type].label}">
+                            <div class="field-row">
+                              <div><label>תאריך</label><input type="date" id="f_date" value="${draft.date}"></div>
+                              <div></div>
+                            </div>
+                            <div class="field-row">
+                              <div><label>שעת התחלה</label><input type="time" id="f_start" value="${draft.startTime}"></div>
+                              <div><label>שעת סיום</label><input type="time" id="f_end" value="${draft.endTime}"></div>
+                            </div>
+                            <div id="typeExtra"></div>
+                            <div class="toggle-row">
+                              <div><div class="t-main">חסימת זמן נסיעה/התארגנות</div><div class="t-sub">${DATA.settings.bufferMinutes} דק' לפני ואחרי</div></div>
+                              <div class="switch ${draft.useBuffer !== false ? 'on' : ''}" id="f_buffer"></div>
+                            </div>
+                            <div id="recurringBox"></div>
+                            <label>הערות</label>
+                            <textarea id="f_notes" rows="2" placeholder="הערות חופשיות...">${escapeHtml(draft.notes || '')}</textarea>
+                            <div id="conflictBox"></div>
+                            <div class="row-btns">
+                              ${draft.id ? '<button class="btn btn-danger" id="delEvBtn">מחיקה</button>' : ''}
+                              <button class="btn btn-primary" id="saveEvBtn">שמירה</button>
+                            </div>
+                          `;
                 document.getElementById('f_buffer').addEventListener('click', function () { this.classList.toggle('on'); refreshConflictPreview(draft); });
 
                 document.querySelectorAll('#typePicker .type-opt').forEach(btn => {
@@ -2223,11 +2224,11 @@
                 function renderRecurringBox(d) {
                     const box = document.getElementById('recurringBox');
                     // אפשרות "אירוע חוזר" זמינה רק בהוספת פעילות חדשה (לא בעריכת פעילות בודדת), ורק למשמרות/שיעורים
-                    if (d.id || (d.type !== 'shift' && d.type !== 'lesson')) { box.innerHTML = ''; return; }
+                    if (d.id) { box.innerHTML = ''; return; }
                     box.innerHTML = `<div class="toggle-row">
-                          <div><div class="t-main">אירוע חוזר 🔁</div><div class="t-sub">כל שבוע, באותו יום ואותה שעה, למשך שנה קדימה</div></div>
-                          <div class="switch ${d.recurring ? 'on' : ''}" id="f_recurring"></div>
-                        </div>`;
+                              <div><div class="t-main">אירוע חוזר 🔁</div><div class="t-sub">כל שבוע, באותו יום ואותה שעה, למשך שנה קדימה</div></div>
+                              <div class="switch ${d.recurring ? 'on' : ''}" id="f_recurring"></div>
+                            </div>`;
                     document.getElementById('f_recurring').addEventListener('click', function () {
                         this.classList.toggle('on');
                         d.recurring = this.classList.contains('on');
@@ -2238,11 +2239,11 @@
                     const box = document.getElementById('typeExtra');
                     if (d.type === 'shift') {
                         box.innerHTML = `<label>משמרת מהירה (מעדכן את השעות)</label>
-                          <div class="preset-row" id="shiftPresets">
-                            <button type="button" class="preset" data-s="07:00" data-e="14:30">🌅 משמרת בוקר<small>07:00–14:30</small></button>
-                            <button type="button" class="preset" data-s="14:00" data-e="21:30">🌙 משמרת ערב<small>14:00–21:30</small></button>
-                          </div>
-                          <label>טיפים / בונוס במשמרת (₪)</label><input type="number" id="f_comm" value="${d.commission || 0}" min="0" step="5">`;
+                              <div class="preset-row" id="shiftPresets">
+                                <button type="button" class="preset" data-s="07:00" data-e="14:30">🌅 משמרת בוקר<small>07:00–14:30</small></button>
+                                <button type="button" class="preset" data-s="14:00" data-e="21:30">🌙 משמרת ערב<small>14:00–21:30</small></button>
+                              </div>
+                              <label>טיפים / בונוס במשמרת (₪)</label><input type="number" id="f_comm" value="${d.commission || 0}" min="0" step="5">`;
                         document.querySelectorAll('#shiftPresets .preset').forEach(b => b.addEventListener('click', () => {
                             document.getElementById('f_start').value = b.dataset.s;
                             document.getElementById('f_end').value = b.dataset.e;
@@ -2252,8 +2253,8 @@
                         updatePresetSel();
                     } else if (d.type === 'lesson') {
                         box.innerHTML = `<label>תלמיד/ה</label>
-                          <select id="f_client"><option value="">— ללא שיוך —</option>${students.map(c => `<option value="${c.id}" ${d.clientId === c.id ? 'selected' : ''}>${escapeHtml(c.name)}${c.subject ? ' (' + escapeHtml(c.subject) + ')' : ''}</option>`).join('')}</select>
-                          <label>מחיר השיעור (₪)</label><input type="number" id="f_price" value="${d.price != null ? d.price : DATA.settings.lessonPrice}" min="0" step="5">`;
+                              <select id="f_client"><option value="">— ללא שיוך —</option>${students.map(c => `<option value="${c.id}" ${d.clientId === c.id ? 'selected' : ''}>${escapeHtml(c.name)}${c.subject ? ' (' + escapeHtml(c.subject) + ')' : ''}</option>`).join('')}</select>
+                              <label>מחיר השיעור (₪)</label><input type="number" id="f_price" value="${d.price != null ? d.price : DATA.settings.lessonPrice}" min="0" step="5">`;
                         document.getElementById('f_client').addEventListener('change', function () {
                             const chosen = students.find(c => c.id === this.value);
                             const priceInput = document.getElementById('f_price');
@@ -2305,7 +2306,7 @@
                     } else {
                         draft.id = uid();
                         if (draft.type === 'lesson') draft.status = 'scheduled';
-                        if (draft.recurring && (draft.type === 'shift' || draft.type === 'lesson')) {
+                        if (draft.recurring) {
                             const recurringId = uid();
                             const occurrences = 52; // כל שבוע, לשנה קדימה
                             const baseDate = parseDateStr(draft.date);
@@ -2358,12 +2359,12 @@
                     div.className = 'client-card';
                     const chips = (c.subject ? '<span class="chip">' + escapeHtml(c.subject) + '</span>' : '') + (c.age ? '<span class="chip soft">גיל ' + escapeHtml(c.age) + '</span>' : '');
                     div.innerHTML = `<div class="client-top">
-                          <div class="avatar">${escapeHtml((c.name || '?').trim().charAt(0))}</div>
-                          <div class="client-main"><div class="client-name">${escapeHtml(c.name)}</div>${chips ? '<div class="chips">' + chips + '</div>' : ''}</div>
-                          <span class="pkg-pill">${lessonsDone(c)} שיעורים</span>
-                        </div>
-                        <div class="progress-wrap"><div class="progress"><i style="width:${prog}%"></i></div><span class="pct">${prog}%</span></div>
-                        ${c.learned ? '<div class="client-goals">📖 ' + escapeHtml(c.learned) + '</div>' : ''}`;
+                              <div class="avatar">${escapeHtml((c.name || '?').trim().charAt(0))}</div>
+                              <div class="client-main"><div class="client-name">${escapeHtml(c.name)}</div>${chips ? '<div class="chips">' + chips + '</div>' : ''}</div>
+                              <span class="pkg-pill">${lessonsDone(c)} שיעורים</span>
+                            </div>
+                            <div class="progress-wrap"><div class="progress"><i style="width:${prog}%"></i></div><span class="pct">${prog}%</span></div>
+                            ${c.learned ? '<div class="client-goals">📖 ' + escapeHtml(c.learned) + '</div>' : ''}`;
                     div.addEventListener('click', () => openClientDetail(c.id));
                     holder.appendChild(div);
                 });
@@ -2375,22 +2376,22 @@
                 document.getElementById('clModalTitle').textContent = c ? 'עריכת תלמיד/ה' : 'תלמיד/ה חדש/ה';
                 const draft = c ? Object.assign({}, c) : { id: null, name: '', phone: '', subject: '', age: '', progress: 0, learned: '', notes: '', history: [], price: '' };
                 document.getElementById('clModalBody').innerHTML = `
-                        <label>שם מלא</label><input id="c_name" value="${escapeHtml(draft.name)}">
-                        <div class="field-row">
-                          <div><label>מקצוע</label><input id="c_subject" value="${escapeHtml(draft.subject || '')}" placeholder="למשל: מתמטיקה"></div>
-                          <div style="flex:.6"><label>גיל</label><input id="c_age" type="number" min="1" max="99" value="${escapeHtml(draft.age || '')}"></div>
-                        </div>
-                        <label>טלפון (תלמיד/ה או הורה)</label><input id="c_phone" value="${escapeHtml(draft.phone || '')}" type="tel">
-                        <label>מחיר קבוע לשיעור (₪) <span style="font-weight:400;">— אם לא מוגדר, ישמש המחיר הכללי מההגדרות</span></label>
-                        <input id="c_price" type="number" min="0" step="5" value="${draft.price != null ? escapeHtml(draft.price) : ''}" placeholder="${DATA.settings.lessonPrice}">
-                        <label>התקדמות: <b id="c_prog_val" style="color:var(--accent)">${draft.progress || 0}%</b></label>
-                        <input id="c_prog" type="range" min="0" max="100" step="5" value="${draft.progress || 0}">
-                        <label>מה למדו עד כה</label><textarea id="c_learned" rows="4" placeholder="נושאים, פרקים, מיומנויות שכבר נלמדו...">${escapeHtml(draft.learned || '')}</textarea>
-                        <label>הערות</label><textarea id="c_notes" rows="2" placeholder="קשיים, סגנון למידה, דברים לזכור...">${escapeHtml(draft.notes || '')}</textarea>
-                        <div class="row-btns">
-                          ${draft.id ? '<button class="btn btn-danger" id="delClBtn">מחיקה</button>' : ''}
-                          <button class="btn btn-primary" id="saveClBtn">שמירה</button>
-                        </div>`;
+                            <label>שם מלא</label><input id="c_name" value="${escapeHtml(draft.name)}">
+                            <div class="field-row">
+                              <div><label>מקצוע</label><input id="c_subject" value="${escapeHtml(draft.subject || '')}" placeholder="למשל: מתמטיקה"></div>
+                              <div style="flex:.6"><label>גיל</label><input id="c_age" type="number" min="1" max="99" value="${escapeHtml(draft.age || '')}"></div>
+                            </div>
+                            <label>טלפון (תלמיד/ה או הורה)</label><input id="c_phone" value="${escapeHtml(draft.phone || '')}" type="tel">
+                            <label>מחיר קבוע לשיעור (₪) <span style="font-weight:400;">— אם לא מוגדר, ישמש המחיר הכללי מההגדרות</span></label>
+                            <input id="c_price" type="number" min="0" step="5" value="${draft.price != null ? escapeHtml(draft.price) : ''}" placeholder="${DATA.settings.lessonPrice}">
+                            <label>התקדמות: <b id="c_prog_val" style="color:var(--accent)">${draft.progress || 0}%</b></label>
+                            <input id="c_prog" type="range" min="0" max="100" step="5" value="${draft.progress || 0}">
+                            <label>מה למדו עד כה</label><textarea id="c_learned" rows="4" placeholder="נושאים, פרקים, מיומנויות שכבר נלמדו...">${escapeHtml(draft.learned || '')}</textarea>
+                            <label>הערות</label><textarea id="c_notes" rows="2" placeholder="קשיים, סגנון למידה, דברים לזכור...">${escapeHtml(draft.notes || '')}</textarea>
+                            <div class="row-btns">
+                              ${draft.id ? '<button class="btn btn-danger" id="delClBtn">מחיקה</button>' : ''}
+                              <button class="btn btn-primary" id="saveClBtn">שמירה</button>
+                            </div>`;
                 document.getElementById('c_prog').addEventListener('input', e => { document.getElementById('c_prog_val').textContent = e.target.value + '%'; });
                 document.getElementById('saveClBtn').addEventListener('click', () => {
                     draft.name = document.getElementById('c_name').value.trim();
@@ -2431,29 +2432,29 @@
                 const history = (c.history || []).slice().reverse();
                 const chips = (c.subject ? '<span class="chip">' + escapeHtml(c.subject) + '</span>' : '') + (c.age ? '<span class="chip soft">גיל ' + escapeHtml(c.age) + '</span>' : '') + (c.phone ? '<span class="chip soft">' + escapeHtml(c.phone) + '</span>' : '') + (c.price != null && c.price !== '' ? '<span class="chip soft">' + money(c.price) + ' לשיעור</span>' : '');
                 document.getElementById('clDetailBody').innerHTML = `
-                        <div class="modal-title">${escapeHtml(c.name)}</div>
-                        ${chips ? '<div class="chips" style="margin:0 0 12px;">' + chips + '</div>' : ''}
-                        <div class="stat-grid" style="margin:12px 0;">
-                          <div class="stat"><div class="si">✏️</div><div class="num">${lessonsDone(c)}</div><div class="lbl">שיעורים שהתקיימו</div></div>
-                          <div class="stat"><div class="si">🌱</div><div class="num">${prog}%</div><div class="lbl">התקדמות</div>
-                            <div class="progress" style="margin-top:8px;"><i style="width:${prog}%"></i></div></div>
-                        </div>
-                        ${c.learned ? '<div class="section-title">📖 מה למדו עד כה</div><div class="prose">' + escapeHtml(c.learned) + '</div>' : ''}
-                        ${c.notes ? '<div class="section-title">📝 הערות</div><div class="prose">' + escapeHtml(c.notes) + '</div>' : ''}
-                        <div class="section-title">שיעורים קרובים</div>
-                        ${upcoming.length ? upcoming.map(e => `<div class="ev-card" style="--c:${TYPE_META.lesson.color};--cbg:${TYPE_META.lesson.bg}"><div class="ev-time"><div class="t1">${e.startTime}</div><div class="t2">${e.date.slice(5)}</div></div>
-                          <div class="ev-body"><div class="ev-title">${escapeHtml(e.title || 'שיעור פרטי')}</div>
-                          <div class="row-btns">
-                            <button class="btn btn-ghost btn-sm" data-checkin="${e.id}">${ICONS.check} התקיים</button>
-                            <button class="btn btn-danger btn-sm" data-cancel="${e.id}">ביטול</button>
-                          </div></div></div>`).join('') : '<div class="empty-note">אין שיעורים עתידיים מתוזמנים</div>'}
-                        <div class="section-title">היסטוריה</div>
-                        ${history.length ? history.slice(0, 10).map(h => `<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px;">
-                          <span>${h.date}</span><span style="font-weight:600;color:${h.status === 'attended' ? 'var(--ok)' : 'var(--danger)'}">${h.status === 'attended' ? 'התקיים' : h.status === 'late-cancel' ? 'ביטול מאוחר (מחויב)' : 'בוטל'}</span></div>`).join('') : '<div class="empty-note">אין היסטוריה עדיין</div>'}
-                        <div class="row-btns">
-                          <button class="btn btn-ghost" id="editClFromDetail">עריכת פרטים</button>
-                        </div>
-                      `;
+                            <div class="modal-title">${escapeHtml(c.name)}</div>
+                            ${chips ? '<div class="chips" style="margin:0 0 12px;">' + chips + '</div>' : ''}
+                            <div class="stat-grid" style="margin:12px 0;">
+                              <div class="stat"><div class="si">✏️</div><div class="num">${lessonsDone(c)}</div><div class="lbl">שיעורים שהתקיימו</div></div>
+                              <div class="stat"><div class="si">🌱</div><div class="num">${prog}%</div><div class="lbl">התקדמות</div>
+                                <div class="progress" style="margin-top:8px;"><i style="width:${prog}%"></i></div></div>
+                            </div>
+                            ${c.learned ? '<div class="section-title">📖 מה למדו עד כה</div><div class="prose">' + escapeHtml(c.learned) + '</div>' : ''}
+                            ${c.notes ? '<div class="section-title">📝 הערות</div><div class="prose">' + escapeHtml(c.notes) + '</div>' : ''}
+                            <div class="section-title">שיעורים קרובים</div>
+                            ${upcoming.length ? upcoming.map(e => `<div class="ev-card" style="--c:${TYPE_META.lesson.color};--cbg:${TYPE_META.lesson.bg}"><div class="ev-time"><div class="t1">${e.startTime}</div><div class="t2">${e.date.slice(5)}</div></div>
+                              <div class="ev-body"><div class="ev-title">${escapeHtml(e.title || 'שיעור פרטי')}</div>
+                              <div class="row-btns">
+                                <button class="btn btn-ghost btn-sm" data-checkin="${e.id}">${ICONS.check} התקיים</button>
+                                <button class="btn btn-danger btn-sm" data-cancel="${e.id}">ביטול</button>
+                              </div></div></div>`).join('') : '<div class="empty-note">אין שיעורים עתידיים מתוזמנים</div>'}
+                            <div class="section-title">היסטוריה</div>
+                            ${history.length ? history.slice(0, 10).map(h => `<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px;">
+                              <span>${h.date}</span><span style="font-weight:600;color:${h.status === 'attended' ? 'var(--ok)' : 'var(--danger)'}">${h.status === 'attended' ? 'התקיים' : h.status === 'late-cancel' ? 'ביטול מאוחר (מחויב)' : 'בוטל'}</span></div>`).join('') : '<div class="empty-note">אין היסטוריה עדיין</div>'}
+                            <div class="row-btns">
+                              <button class="btn btn-ghost" id="editClFromDetail">עריכת פרטים</button>
+                            </div>
+                          `;
                 document.getElementById('editClFromDetail').addEventListener('click', () => { closeModal('modalClientDetail'); openClientModal(id); });
                 document.querySelectorAll('[data-checkin]').forEach(b => b.addEventListener('click', () => markLesson(b.dataset.checkin, 'attended')));
                 document.querySelectorAll('[data-cancel]').forEach(b => b.addEventListener('click', () => {
@@ -2538,35 +2539,36 @@
                 const totalIncome = shiftIncome + lessonIncome;
 
                 document.getElementById('financeHolder').innerHTML = `
-                        <div class="card hero">
-                          <div class="section-title" style="margin-top:0;">סה"כ הכנסה החודש</div>
-                          <div style="font-size:36px;font-weight:800;font-variant-numeric:tabular-nums;">${money(totalIncome)}</div>
-                        </div>
-                        <div class="stat-grid">
-                          <div class="stat" id="statShiftIncome" style="cursor:pointer;">
-                            <div class="si">🥤</div><div class="num">${money(shiftIncome)}</div><div class="lbl">הכנסה ממיציפי (לחצי לפירוט)</div>
-                          </div>
-                          <div class="stat" id="statLessonIncome" style="cursor:pointer;">
-                            <div class="si">📚</div><div class="num">${money(lessonIncome)}</div><div class="lbl">הכנסה משיעורים (לחצי לפירוט)</div>
-                          </div>
-                          <div class="stat"><div class="si">⏰</div><div class="num">${shiftHours.toFixed(1)}</div><div class="lbl">שעות במיציפי</div></div>
-                          <div class="stat"><div class="si">✏️</div><div class="num">${lessonsHeld}</div><div class="lbl">שיעורים שבוצעו</div></div>
-                          <div class="stat"><div class="si">🎓</div><div class="num">${lessonHours.toFixed(1)}</div><div class="lbl">שעות הוראה</div></div>
-                          <div class="stat"><div class="si">🍓</div><div class="num">${money(tips)}</div><div class="lbl">טיפים / בונוסים</div></div>
-                        </div>
-                        <div class="section-title">פילוח הכנסה</div>
-                        <div class="card">
-                          ${financeBar('מיציפי 🥤', shiftIncome, totalIncome || 1, 'var(--shift)', true)}
-                          ${financeBar('שיעורים 📚', lessonIncome, totalIncome || 1, 'var(--lesson)', true)}
-                        </div>
-                        <div class="section-title">חלוקת שעות</div>
-                        <div class="card">
-                          ${financeBar('מיציפי 🥤', shiftHours, (shiftHours + lessonHours) || 1, 'var(--shift)', false)}
-                          ${financeBar('הוראה 📚', lessonHours, (shiftHours + lessonHours) || 1, 'var(--lesson)', false)}
-                        </div>
-                      `;
+                            <div class="card hero">
+                              <div class="section-title" style="margin-top:0;">סה"כ הכנסה החודש</div>
+                              <div style="font-size:36px;font-weight:800;font-variant-numeric:tabular-nums;">${money(totalIncome)}</div>
+                            </div>
+                            <div class="stat-grid">
+                              <div class="stat" id="statShiftIncome" style="cursor:pointer;">
+                                <div class="si">🥤</div><div class="num">${money(shiftIncome)}</div><div class="lbl">הכנסה ממיציפי (לחצי לפירוט)</div>
+                              </div>
+                              <div class="stat" id="statLessonIncome" style="cursor:pointer;">
+                                <div class="si">📚</div><div class="num">${money(lessonIncome)}</div><div class="lbl">הכנסה משיעורים (לחצי לפירוט)</div>
+                              </div>
+                              <div class="stat"><div class="si">⏰</div><div class="num">${shiftHours.toFixed(1)}</div><div class="lbl">שעות במיציפי</div></div>
+                              <div class="stat" id="statLessonsHeld" style="cursor:pointer;"><div class="si">✏️</div><div class="num">${lessonsHeld}</div><div class="lbl">שיעורים שבוצעו (לחצי לפירוט)</div></div>
+                              <div class="stat"><div class="si">🎓</div><div class="num">${lessonHours.toFixed(1)}</div><div class="lbl">שעות הוראה</div></div>
+                              <div class="stat"><div class="si">🍓</div><div class="num">${money(tips)}</div><div class="lbl">טיפים / בונוסים</div></div>
+                            </div>
+                            <div class="section-title">פילוח הכנסה</div>
+                            <div class="card">
+                              ${financeBar('מיציפי 🥤', shiftIncome, totalIncome || 1, 'var(--shift)', true)}
+                              ${financeBar('שיעורים 📚', lessonIncome, totalIncome || 1, 'var(--lesson)', true)}
+                            </div>
+                            <div class="section-title">חלוקת שעות</div>
+                            <div class="card">
+                              ${financeBar('מיציפי 🥤', shiftHours, (shiftHours + lessonHours) || 1, 'var(--shift)', false)}
+                              ${financeBar('הוראה 📚', lessonHours, (shiftHours + lessonHours) || 1, 'var(--lesson)', false)}
+                            </div>
+                          `;
                 document.getElementById('statShiftIncome').addEventListener('click', () => openShiftFinanceDetail(y, m));
                 document.getElementById('statLessonIncome').addEventListener('click', () => openLessonFinanceDetail(y, m));
+                document.getElementById('statLessonsHeld').addEventListener('click', () => openLessonCountDetail(y, m));
             }
             function financeBar(label, val, total, color, isMoney) {
                 const pct = val > 0 ? Math.max(2, Math.min(100, (val / total) * 100)) : 0;
@@ -2601,12 +2603,12 @@
                 const summaryHtml = Object.keys(byKind).map(k => {
                     const s = byKind[k];
                     return `<div class="client-card" style="margin-bottom:8px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                          <div style="font-weight:700;">${s.emo} ${escapeHtml(k)}</div>
-                          <div style="font-weight:800;color:var(--accent);">${money(s.income)}</div>
-                        </div>
-                        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${s.count} משמרות · ${s.hours.toFixed(1)} שעות${s.tips ? ' · טיפים ' + money(s.tips) : ''}</div>
-                      </div>`;
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                              <div style="font-weight:700;">${s.emo} ${escapeHtml(k)}</div>
+                              <div style="font-weight:800;color:var(--accent);">${money(s.income)}</div>
+                            </div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${s.count} משמרות · ${s.hours.toFixed(1)} שעות${s.tips ? ' · טיפים ' + money(s.tips) : ''}</div>
+                          </div>`;
                 }).join('') || '<div class="empty-note">אין משמרות שהושלמו בחודש זה</div>';
 
                 const listHtml = shifts.map(ev => {
@@ -2615,22 +2617,45 @@
                     const income = hrs * DATA.settings.shiftHourlyRate + (ev.commission || 0);
                     const kind = shiftKindLabel(ev);
                     return `<div class="ev-card" style="--c:var(--shift);--cbg:var(--shift-bg);">
-                        <div class="ev-time"><div class="t1">${ev.startTime}</div><div class="t2">${ev.endTime}</div></div>
-                        <div class="ev-body">
-                          <div class="ev-title-row"><span class="ev-icon"><i class="emo">${kind.emo}</i></span><span class="ev-title">${escapeHtml(kind.label)} · ${ev.date.slice(5)}</span></div>
-                          <div class="ev-meta">${hrs.toFixed(1)} שעות · ${money(income)}${ev.commission ? ' (כולל טיפים ' + money(ev.commission) + ')' : ''}</div>
-                        </div>
-                      </div>`;
+                            <div class="ev-time"><div class="t1">${ev.startTime}</div><div class="t2">${ev.endTime}</div></div>
+                            <div class="ev-body">
+                              <div class="ev-title-row"><span class="ev-icon"><i class="emo">${kind.emo}</i></span><span class="ev-title">${escapeHtml(kind.label)} · ${ev.date.slice(5)}</span></div>
+                              <div class="ev-meta">${hrs.toFixed(1)} שעות · ${money(income)}${ev.commission ? ' (כולל טיפים ' + money(ev.commission) + ')' : ''}</div>
+                            </div>
+                          </div>`;
                 }).join('');
 
                 document.getElementById('finDetailBody').innerHTML = `
-                    <div class="modal-title">🥤 פירוט הכנסות ממשמרות</div>
-                    <div class="empty-note" style="padding:2px 0 14px;text-align:right;">${MONTHS[m]} ${y} · סה"כ ${money(totalIncome)} מתוך ${totalHours.toFixed(1)} שעות${totalTips ? ' וטיפים ' + money(totalTips) : ''}</div>
-                    <div class="section-title" style="margin-top:0;">סיכום לפי סוג משמרת</div>
-                    ${summaryHtml}
-                    <div class="section-title">כל המשמרות</div>
-                    ${listHtml || '<div class="empty-note">אין משמרות שהושלמו בחודש זה</div>'}
-                  `;
+                        <div class="modal-title">🥤 פירוט הכנסות ממשמרות</div>
+                        <div class="empty-note" style="padding:2px 0 14px;text-align:right;">${MONTHS[m]} ${y} · סה"כ ${money(totalIncome)} מתוך ${totalHours.toFixed(1)} שעות${totalTips ? ' וטיפים ' + money(totalTips) : ''}</div>
+                        <div class="section-title" style="margin-top:0;">סיכום לפי סוג משמרת</div>
+                        ${summaryHtml}
+                        <div class="section-title">כל המשמרות</div>
+                        ${listHtml || '<div class="empty-note">אין משמרות שהושלמו בחודש זה</div>'}
+                      `;
+                document.getElementById('modalFinanceDetail').classList.add('open');
+            }
+            function openLessonCountDetail(y, m) {
+                const held = DATA.events.filter(e => {
+                    if (e.type !== 'lesson') return false;
+                    if (!(e.status === 'attended' || e.status === 'late-cancel')) return false;
+                    const d = parseDateStr(e.date);
+                    return d.getFullYear() === y && d.getMonth() === m;
+                });
+                const counts = {};
+                held.forEach(ev => {
+                    const st = ev.clientId ? DATA.clients.find(c => c.id === ev.clientId) : null;
+                    const name = st ? st.name : 'ללא שיוך';
+                    counts[name] = (counts[name] || 0) + 1;
+                });
+                const rows = Object.keys(counts).sort((a, b) => counts[b] - counts[a]).map(name =>
+                    `<div class="client-card" style="margin-bottom:8px;"><div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-weight:700;">📚 ${escapeHtml(name)}</div>
+            <div style="font-weight:800;color:var(--accent);">${counts[name]} שיעורים</div></div></div>`
+                ).join('') || '<div class="empty-note">אין שיעורים שהתקיימו בחודש זה</div>';
+                document.getElementById('finDetailBody').innerHTML =
+                    `<div class="modal-title">✏️ שיעורים שבוצעו</div>
+         <div class="empty-note" style="padding:2px 0 14px;text-align:right;">${MONTHS[m]} ${y} · סה"כ ${held.length} שיעורים</div>${rows}`;
                 document.getElementById('modalFinanceDetail').classList.add('open');
             }
 
@@ -2657,34 +2682,34 @@
                 const summaryHtml = Object.keys(byStudent).sort((a, b) => byStudent[b].income - byStudent[a].income).map(name => {
                     const s = byStudent[name];
                     return `<div class="client-card" style="margin-bottom:8px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                          <div style="font-weight:700;">📚 ${escapeHtml(name)}</div>
-                          <div style="font-weight:800;color:var(--accent);">${money(s.income)}</div>
-                        </div>
-                        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${s.count} שיעורים</div>
-                      </div>`;
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                              <div style="font-weight:700;">📚 ${escapeHtml(name)}</div>
+                              <div style="font-weight:800;color:var(--accent);">${money(s.income)}</div>
+                            </div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">${s.count} שיעורים</div>
+                          </div>`;
                 }).join('') || '<div class="empty-note">אין שיעורים שהתקיימו בחודש זה</div>';
 
                 const listHtml = held.map(ev => {
                     const price = ev.price != null ? ev.price : DATA.settings.lessonPrice;
                     const student = ev.clientId ? DATA.clients.find(c => c.id === ev.clientId) : null;
                     return `<div class="ev-card" style="--c:var(--lesson);--cbg:var(--lesson-bg);">
-                        <div class="ev-time"><div class="t1">${ev.startTime}</div><div class="t2">${ev.date.slice(5)}</div></div>
-                        <div class="ev-body">
-                          <div class="ev-title-row"><span class="ev-icon"><i class="emo">📚</i></span><span class="ev-title">${escapeHtml(student ? student.name : (ev.title || 'שיעור פרטי'))}</span></div>
-                          <div class="ev-meta">${money(price)}${ev.status === 'late-cancel' ? ' · ביטול מאוחר (מחויב)' : ''}</div>
-                        </div>
-                      </div>`;
+                            <div class="ev-time"><div class="t1">${ev.startTime}</div><div class="t2">${ev.date.slice(5)}</div></div>
+                            <div class="ev-body">
+                              <div class="ev-title-row"><span class="ev-icon"><i class="emo">📚</i></span><span class="ev-title">${escapeHtml(student ? student.name : (ev.title || 'שיעור פרטי'))}</span></div>
+                              <div class="ev-meta">${money(price)}${ev.status === 'late-cancel' ? ' · ביטול מאוחר (מחויב)' : ''}</div>
+                            </div>
+                          </div>`;
                 }).join('');
 
                 document.getElementById('finDetailBody').innerHTML = `
-                    <div class="modal-title">📚 פירוט הכנסות משיעורים</div>
-                    <div class="empty-note" style="padding:2px 0 14px;text-align:right;">${MONTHS[m]} ${y} · סה"כ ${money(totalIncome)} מתוך ${held.length} שיעורים</div>
-                    <div class="section-title" style="margin-top:0;">סיכום לפי תלמיד/ה</div>
-                    ${summaryHtml}
-                    <div class="section-title">כל השיעורים</div>
-                    ${listHtml || '<div class="empty-note">אין שיעורים שהתקיימו בחודש זה</div>'}
-                  `;
+                        <div class="modal-title">📚 פירוט הכנסות משיעורים</div>
+                        <div class="empty-note" style="padding:2px 0 14px;text-align:right;">${MONTHS[m]} ${y} · סה"כ ${money(totalIncome)} מתוך ${held.length} שיעורים</div>
+                        <div class="section-title" style="margin-top:0;">סיכום לפי תלמיד/ה</div>
+                        ${summaryHtml}
+                        <div class="section-title">כל השיעורים</div>
+                        ${listHtml || '<div class="empty-note">אין שיעורים שהתקיימו בחודש זה</div>'}
+                      `;
                 document.getElementById('modalFinanceDetail').classList.add('open');
             }
 
@@ -2717,18 +2742,18 @@
                     const student = first.type === 'lesson' && first.clientId ? DATA.clients.find(c => c.id === first.clientId) : null;
                     const nameLine = (first.title ? first.title : meta.label) + (student ? ' · ' + student.name : '');
                     return `<div class="client-card" style="margin-bottom:10px;">
-                        <div style="display:flex;align-items:center;gap:8px;">
-                          <span class="emo">${meta.icon.replace(/<[^>]+>/g,'')}</span>
-                          <div style="flex:1;">
-                            <div style="font-weight:700;">${escapeHtml(nameLine)}</div>
-                            <div style="font-size:12px;color:var(--text-muted);">כל יום ${dowLabel}' · ${first.startTime}–${first.endTime}</div>
-                          </div>
-                        </div>
-                        <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">${future.length} מופעים עתידיים${past ? ' · ' + past + ' כבר עברו' : ''}</div>
-                        <div class="row-btns">
-                          <button class="btn btn-danger btn-sm" data-cancel-recurring="${rid}" ${future.length ? '' : 'disabled style="opacity:.5;"'}>ביטול האירוע החוזר מהיום ואילך</button>
-                        </div>
-                      </div>`;
+                            <div style="display:flex;align-items:center;gap:8px;">
+                              <span class="emo">${meta.icon.replace(/<[^>]+>/g, '')}</span>
+                              <div style="flex:1;">
+                                <div style="font-weight:700;">${escapeHtml(nameLine)}</div>
+                                <div style="font-size:12px;color:var(--text-muted);">כל יום ${dowLabel}' · ${first.startTime}–${first.endTime}</div>
+                              </div>
+                            </div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">${future.length} מופעים עתידיים${past ? ' · ' + past + ' כבר עברו' : ''}</div>
+                            <div class="row-btns">
+                              <button class="btn btn-danger btn-sm" data-cancel-recurring="${rid}" ${future.length ? '' : 'disabled style="opacity:.5;"'}>ביטול האירוע החוזר מהיום ואילך</button>
+                            </div>
+                          </div>`;
                 }).join('');
                 holder.querySelectorAll('[data-cancel-recurring]').forEach(btn => {
                     btn.addEventListener('click', () => {
@@ -2844,57 +2869,57 @@
                 const recurringCount = new Set(DATA.events.filter(e => e.recurringId).map(e => e.recurringId)).size;
 
                 holder.innerHTML = `
-                        <div class="section-title" style="margin-top:0;">💰 תעריפים</div>
-                        <div class="card">
-                          <label>תעריף שעתי – משמרת במיציפי (₪)</label><input type="number" id="s_rate" value="${s.shiftHourlyRate}" step="0.1">
-                          <label>מחיר שיעור פרטי כללי (₪)</label><input type="number" id="s_price" value="${s.lessonPrice}" step="5">
-                          <div class="empty-note" style="padding:6px 0 0;text-align:right;">אפשר לקבוע מחיר קבוע לכל תלמיד/ה בנפרד בעמוד "תלמידים"</div>
-                        </div>
-                        <div class="section-title">⏱️ מרווחים</div>
-                        <div class="card">
-                          <label>זמן נסיעה/התארגנות בין פעילויות (דקות)</label><input type="number" id="s_buffer" value="${s.bufferMinutes}" step="5">
-                        </div>
-                        <div class="section-title">🔁 אירועים חוזרים</div>
-                        <div class="card">
-                          <div class="empty-note" style="padding:6px 0 12px;text-align:right;">${recurringCount ? recurringCount + ' סדרות אירועים חוזרים מוגדרות כרגע.' : 'עדיין לא הוגדרו אירועים חוזרים.'}</div>
-                          <button class="btn btn-ghost" id="openRecurringBtn">${ICONS.repeat} ניהול אירועים חוזרים</button>
-                        </div>
-                        <div class="section-title">🔔 התראות ותזכורות</div>
-                        <div class="card">
-                          <div class="toggle-row">
-                            <div><div class="t-main">תזכורות לפני פעילות</div><div class="t-sub">התראה בדפדפן/באפליקציה המותקנת לפני כל פעילות</div></div>
-                            <div class="switch ${s.notificationsEnabled ? 'on' : ''}" id="s_notif"></div>
-                          </div>
-                          <label>כמה דקות לפני להתריע</label><input type="number" id="s_remind_min" value="${s.reminderMinutes || 60}" min="5" step="5">
-                          <div class="toggle-row">
-                            <div><div class="t-main">סיכום בוקר יומי</div><div class="t-sub">התראה יומית עם רשימת הפעילויות של היום</div></div>
-                            <div class="switch ${s.morningSummaryEnabled ? 'on' : ''}" id="s_morning"></div>
-                          </div>
-                          <label>שעת סיכום בוקר</label><input type="time" id="s_morning_time" value="${s.morningSummaryTime || '07:00'}">
-                          <div class="alert soft">${ICONS.bell}<div><b>סטטוס הרשאה</b>${permNote}</div></div>
-                          <div class="alert soft">${ICONS.warn}<div><b>לתשומת לבך</b>התראות אלו פועלות כל עוד הדפדפן פתוח, או ברקע אם התקנת את האפליקציה למסך הבית. התראות שמגיעות גם כשהאפליקציה סגורה לחלוטין דורשות שרת דחיפה ייעודי ואינן זמינות בגרסה הזו.</div></div>
-                        </div>
-                        <div class="section-title">🎨 כללי</div>
-                        <div class="card">
-                          <div class="toggle-row"><div><div class="t-main">מצב כהה</div><div class="t-sub">עיצוב רך לעיניים בשעות החשכה</div></div>
-                            <div class="switch ${s.theme === 'dark' ? 'on' : ''}" id="s_theme"></div></div>
-                        </div>
-                        <div class="section-title">📲 התקנה ומצב לא-מקוון</div>
-                        <div class="card">
-                          <div class="empty-note" style="padding:6px 0 12px;text-align:right;">התקנת האפליקציה למסך הבית מאפשרת פתיחה מהירה כמו אפליקציה רגילה, ועובדת גם עם קליטה חלשה - הנתונים יסתנכרנו אוטומטית ברגע שהאינטרנט יחזור.</div>
-                         <button class="btn btn-ghost" id="installAppBtn" style="display:${isStandaloneMode() ? 'none' : 'flex'};margin-bottom:8px;">${ICONS.download} התקנת האפליקציה על המכשיר</button>
-                        </div>
-                        <div class="section-title">🗓️ סנכרון יומן</div>
-                        <div class="card">
-                          <div class="empty-note" style="padding:6px 0 12px;text-align:right;">אפשר לייצא את הלו"ז כקובץ ICS ולייבא אותו ידנית ליומן של Google / Apple.</div>
-                          <button class="btn btn-ghost" id="exportIcsBtn">ייצוא ICS</button>
-                        </div>
-                        <div class="section-title">נתונים</div>
-                        <div class="card">
-                          <button class="btn btn-danger" id="resetBtn">${ICONS.trash} איפוס כל הנתונים</button>
-                        </div>
-                        <div class="empty-note">הנתונים נשמרים באופן פרטי בחשבון שלך בלבד 🌷</div>
-                      `;
+                            <div class="section-title" style="margin-top:0;">💰 תעריפים</div>
+                            <div class="card">
+                              <label>תעריף שעתי – משמרת במיציפי (₪)</label><input type="number" id="s_rate" value="${s.shiftHourlyRate}" step="0.1">
+                              <label>מחיר שיעור פרטי כללי (₪)</label><input type="number" id="s_price" value="${s.lessonPrice}" step="5">
+                              <div class="empty-note" style="padding:6px 0 0;text-align:right;">אפשר לקבוע מחיר קבוע לכל תלמיד/ה בנפרד בעמוד "תלמידים"</div>
+                            </div>
+                            <div class="section-title">⏱️ מרווחים</div>
+                            <div class="card">
+                              <label>זמן נסיעה/התארגנות בין פעילויות (דקות)</label><input type="number" id="s_buffer" value="${s.bufferMinutes}" step="5">
+                            </div>
+                            <div class="section-title">🔁 אירועים חוזרים</div>
+                            <div class="card">
+                              <div class="empty-note" style="padding:6px 0 12px;text-align:right;">${recurringCount ? recurringCount + ' סדרות אירועים חוזרים מוגדרות כרגע.' : 'עדיין לא הוגדרו אירועים חוזרים.'}</div>
+                              <button class="btn btn-ghost" id="openRecurringBtn">${ICONS.repeat} ניהול אירועים חוזרים</button>
+                            </div>
+                            <div class="section-title">🔔 התראות ותזכורות</div>
+                            <div class="card">
+                              <div class="toggle-row">
+                                <div><div class="t-main">תזכורות לפני פעילות</div><div class="t-sub">התראה בדפדפן/באפליקציה המותקנת לפני כל פעילות</div></div>
+                                <div class="switch ${s.notificationsEnabled ? 'on' : ''}" id="s_notif"></div>
+                              </div>
+                              <label>כמה דקות לפני להתריע</label><input type="number" id="s_remind_min" value="${s.reminderMinutes || 60}" min="5" step="5">
+                              <div class="toggle-row">
+                                <div><div class="t-main">סיכום בוקר יומי</div><div class="t-sub">התראה יומית עם רשימת הפעילויות של היום</div></div>
+                                <div class="switch ${s.morningSummaryEnabled ? 'on' : ''}" id="s_morning"></div>
+                              </div>
+                              <label>שעת סיכום בוקר</label><input type="time" id="s_morning_time" value="${s.morningSummaryTime || '07:00'}">
+                              <div class="alert soft">${ICONS.bell}<div><b>סטטוס הרשאה</b>${permNote}</div></div>
+                              <div class="alert soft">${ICONS.warn}<div><b>לתשומת לבך</b>התראות אלו פועלות כל עוד הדפדפן פתוח, או ברקע אם התקנת את האפליקציה למסך הבית. התראות שמגיעות גם כשהאפליקציה סגורה לחלוטין דורשות שרת דחיפה ייעודי ואינן זמינות בגרסה הזו.</div></div>
+                            </div>
+                            <div class="section-title">🎨 כללי</div>
+                            <div class="card">
+                              <div class="toggle-row"><div><div class="t-main">מצב כהה</div><div class="t-sub">עיצוב רך לעיניים בשעות החשכה</div></div>
+                                <div class="switch ${s.theme === 'dark' ? 'on' : ''}" id="s_theme"></div></div>
+                            </div>
+                            <div class="section-title">📲 התקנה ומצב לא-מקוון</div>
+                            <div class="card">
+                              <div class="empty-note" style="padding:6px 0 12px;text-align:right;">התקנת האפליקציה למסך הבית מאפשרת פתיחה מהירה כמו אפליקציה רגילה, ועובדת גם עם קליטה חלשה - הנתונים יסתנכרנו אוטומטית ברגע שהאינטרנט יחזור.</div>
+                             <button class="btn btn-ghost" id="installAppBtn" style="display:${isStandaloneMode() ? 'none' : 'flex'};margin-bottom:8px;">${ICONS.download} התקנת האפליקציה על המכשיר</button>
+                            </div>
+                            <div class="section-title">🗓️ סנכרון יומן</div>
+                            <div class="card">
+                              <div class="empty-note" style="padding:6px 0 12px;text-align:right;">אפשר לייצא את הלו"ז כקובץ ICS ולייבא אותו ידנית ליומן של Google / Apple.</div>
+                              <button class="btn btn-ghost" id="exportIcsBtn">ייצוא ICS</button>
+                            </div>
+                            <div class="section-title">נתונים</div>
+                            <div class="card">
+                              <button class="btn btn-danger" id="resetBtn">${ICONS.trash} איפוס כל הנתונים</button>
+                            </div>
+                            <div class="empty-note">הנתונים נשמרים באופן פרטי בחשבון שלך בלבד 🌷</div>
+                          `;
                 document.getElementById('s_theme').addEventListener('click', function () {
                     this.classList.toggle('on');
                     s.theme = this.classList.contains('on') ? 'dark' : 'light';
