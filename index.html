@@ -3233,11 +3233,32 @@
                 let ready = false;
                 // בטלפון (מסך מגע) במצב אנכי - מבקשים להטות. במחשב הסרטון מתנגן ישר.
                 const needRotate = () => window.matchMedia('(pointer: coarse)').matches && window.innerHeight > window.innerWidth;
+                function requestVideoFullscreen() {
+                    if (document.fullscreenElement || document.webkitFullscreenElement) return;
+                    if (v.webkitEnterFullscreen) {           // iOS Safari - פולסקרין נייטיב לווידאו
+                        try { v.webkitEnterFullscreen(); } catch (e) { /* ignore */ }
+                    } else if (wrap.requestFullscreen) {      // כרום/אנדרואיד - על כל המעטפת
+                        wrap.requestFullscreen().catch(() => { });
+                    } else if (wrap.webkitRequestFullscreen) {
+                        wrap.webkitRequestFullscreen();
+                    }
+                }
+                function exitVideoFullscreen() {
+                    if (document.fullscreenElement) document.exitFullscreen().catch(() => { });
+                    else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
+                    else if (document.webkitCurrentFullScreenElement) document.webkitCancelFullScreen && document.webkitCancelFullScreen();
+                }
+
                 function syncOrientation() {
                     const rotate = needRotate();
                     wrap.classList.toggle('need-rotate', rotate);
-                    if (rotate) v.pause();
-                    else if (ready) v.play().catch(() => { v.muted = true; v.play().catch(() => { }); });
+                    if (rotate) {
+                        v.pause();
+                        exitVideoFullscreen();
+                    } else if (ready) {
+                        v.play().catch(() => { v.muted = true; v.play().catch(() => { }); });
+                        requestVideoFullscreen();
+                    }
                 }
                 syncOrientation();
                 window.addEventListener('resize', syncOrientation);
@@ -3248,6 +3269,7 @@
                 setTimeout(() => close.classList.add('show'), 3000);
 
                 close.addEventListener('click', () => {
+                    exitVideoFullscreen();
                     window.removeEventListener('resize', syncOrientation);
                     window.removeEventListener('orientationchange', syncOrientation);
                     v.pause();
