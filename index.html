@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="he" dir="rtl" data-theme="light">
 <head>
@@ -13,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="הלו״ז של הילית">
     <link rel="apple-touch-icon" href="./icon-192.png">
-    <link rel="preload" as="video" href="./splash.mp4" type="video/mp4">
+    <link rel="preload" as="video" href="https://firebasestorage.googleapis.com/v0/b/hilit-a2e48.firebasestorage.app/o/public%2Flevhilit.mp4?alt=media" type="video/mp4">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1572,6 +1571,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 </head>
 <body>
     <!-- מסך התחברות -->
@@ -1580,7 +1580,7 @@
         <span class="float" style="top:18%;left:10%;animation-delay:-1.5s;">📚</span>
         <span class="float" style="bottom:14%;right:16%;animation-delay:-3s;">🍹</span>
         <span class="float" style="bottom:22%;left:14%;animation-delay:-2s;">🌸</span>
-        <video id="splashVideo" class="logo" src="./levhilit.mp4" autoplay muted playsinline webkit-playsinline style="object-fit:cover;background:transparent;"></video>
+        <video id="splashVideo" class="logo" src="https://firebasestorage.googleapis.com/v0/b/hilit-a2e48.firebasestorage.app/o/public%2Flevhilit.mp4?alt=media" autoplay muted playsinline webkit-playsinline style="object-fit:cover;background:transparent;"></video>
         <div id="loginContent" style="display:none;">
             <h1>הלו"ז של הילית</h1>
             <p>שיעורים, משמרות ותלמידים – הכול במקום אחד. נדרשת התחברות מאובטחת.</p>
@@ -1781,17 +1781,50 @@
 
                 // דואג שנוריד ונריץ את app.js פעם אחת בלבד, גם אם onAuthStateChanged יורה כמה פעמים
                 let appLoaded = false;
+                const APP_CODE_CACHE_KEY = 'hilit_app_code_v1';
+
+                function runAppCode(code) {
+                    const s = document.createElement('script');
+                    s.textContent = code;
+                    document.body.appendChild(s); // מריץ את app.js - הוא עצמו קורא ל-startRealtimeSync() בסוף
+                }
 
                 async function loadAppBundle() {
                     // app.js *לא* נמצא ב-GitHub בכלל - הוא נשלף חי מתוך מסמך ב-Firestore,
                     // שמוגן ברולס לפי אימייל. משתמש לא מורשה יקבל permission-denied ולא יקבל את הקוד.
+                    //
+                    // כדי שהפתיחה תהיה מיידית: אם יש עותק שמור, מריצים אותו *ומחזירים מיד*
+                    // (בלי לחכות לרשת בכלל) כדי שהמסך יתקדם על אתר. בדיקת עדכון מול
+                    // Firestore רצה בנפרד לגמרי ברקע, ולא עוצרת שום דבר.
+                    let cached = null;
+                    try { cached = localStorage.getItem(APP_CODE_CACHE_KEY); } catch (e) { /* ignore */ }
+
+                    if (cached) {
+                        runAppCode(cached);
+                        refreshAppCodeInBackground(cached); // fire-and-forget, לא await
+                        return;
+                    }
+
+                    // אין עדיין עותק שמור בכלל (פעם ראשונה במכשיר הזה) - כאן, ורק כאן,
+                    // חייבים לחכות לרשת כי אין מה להריץ אחרת.
                     const snap = await window.db.collection('app_code').doc('main').get();
                     if (!snap.exists) throw new Error('קוד האפליקציה לא נמצא ב-Firestore (app_code/main)');
                     const code = snap.data().code;
                     if (!code) throw new Error('שדה code ריק במסמך app_code/main');
-                    const s = document.createElement('script');
-                    s.textContent = code;
-                    document.body.appendChild(s); // מריץ את app.js - הוא עצמו קורא ל-startRealtimeSync() בסוף
+                    try { localStorage.setItem(APP_CODE_CACHE_KEY, code); } catch (e) { /* ignore */ }
+                    runAppCode(code);
+                }
+
+                function refreshAppCodeInBackground(cached) {
+                    window.db.collection('app_code').doc('main').get().then(snap => {
+                        if (!snap.exists) return;
+                        const code = snap.data().code;
+                        if (code && code !== cached) {
+                            try { localStorage.setItem(APP_CODE_CACHE_KEY, code); } catch (e) { /* ignore */ }
+                            // לא מריצים שוב עכשיו (זה ייצור כפילויות) - הגרסה החדשה
+                            // תיכנס לתוקף בפעם הבאה שהאפליקציה נפתחת
+                        }
+                    }).catch(e => console.warn('בדיקת עדכון ל-app.js ברקע נכשלה, לא נורא', e));
                 }
 
                 window.auth.onAuthStateChanged(async user => {
