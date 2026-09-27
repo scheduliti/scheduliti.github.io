@@ -2399,11 +2399,14 @@
                     const box = document.getElementById('typeExtra');
                     if (d.type === 'shift') {
                         box.innerHTML = `<label>משמרת מהירה (מעדכן את השעות)</label>
-                                  <div class="preset-row" id="shiftPresets">
-                                    <button type="button" class="preset" data-s="07:00" data-e="14:30">🌅 משמרת בוקר<small>07:00–14:30</small></button>
-                                    <button type="button" class="preset" data-s="14:00" data-e="21:30">🌙 משמרת ערב<small>14:00–21:30</small></button>
-                                  </div>
-                                  <label>טיפים / בונוס במשמרת (₪)</label><input type="number" id="f_comm" value="${d.commission || 0}" min="0" step="5">`;
+                          <div class="preset-row" id="shiftPresets">
+                            <button type="button" class="preset" data-s="07:00" data-e="14:30">🌅 משמרת בוקר<small>07:00–14:30</small></button>
+                            <button type="button" class="preset" data-s="14:00" data-e="21:30">🌙 משמרת ערב<small>14:00–21:30</small></button>
+                          </div>
+                          <label>מחיר לשעה במשמרת זו (₪) <span style="font-weight:400;">— אם ריק, ישמש התעריף הכללי מההגדרות</span></label>
+                          <input type="number" id="f_hourlyRate" value="${d.hourlyRate != null ? d.hourlyRate : ''}" min="0" step="1" placeholder="${DATA.settings.shiftHourlyRate}">
+                          <label>טיפים / בונוס במשמרת (₪)</label><input type="number" id="f_comm" value="${d.commission || 0}" min="0" step="5">`;
+
                         document.querySelectorAll('#shiftPresets .preset').forEach(b => b.addEventListener('click', () => {
                             document.getElementById('f_start').value = b.dataset.s;
                             document.getElementById('f_end').value = b.dataset.e;
@@ -2453,7 +2456,11 @@
                     draft.endTime = document.getElementById('f_end').value;
                     draft.useBuffer = document.getElementById('f_buffer').classList.contains('on');
                     draft.notes = document.getElementById('f_notes').value.trim();
-                    if (draft.type === 'shift') { draft.commission = parseFloat(document.getElementById('f_comm').value) || 0; }
+                    if (draft.type === 'shift') {
+                        draft.commission = parseFloat(document.getElementById('f_comm').value) || 0;
+                        const hrVal = document.getElementById('f_hourlyRate').value;
+                        draft.hourlyRate = hrVal === '' ? null : (parseFloat(hrVal) || 0);
+                    }
                     if (draft.type === 'lesson') {
                         draft.clientId = document.getElementById('f_client').value || '';
                         const p = parseFloat(document.getElementById('f_price').value);
@@ -2680,12 +2687,17 @@
                 const inMonth = DATA.events.filter(e => { const d = parseDateStr(e.date); return d.getFullYear() === y && d.getMonth() === m; });
 
                 const now = new Date();
-                let shiftHours = 0, tips = 0, lessonsHeld = 0, lessonsTotal = 0, lessonIncome = 0, lessonHours = 0;
+                let shiftHours = 0, tips = 0, lessonsHeld = 0, lessonsTotal = 0, lessonIncome = 0, lessonHours = 0, shiftIncome = 0;
                 inMonth.forEach(ev => {
                     const { start, end } = eventRange(ev);
                     const hrs = (end - start) / 3600000;
                     const isDone = end.getTime() <= now.getTime();
-                    if (ev.type === 'shift' && isDone) { shiftHours += hrs; tips += (ev.commission || 0); }
+                    if (ev.type === 'shift' && isDone) {
+                        shiftHours += hrs;
+                        tips += (ev.commission || 0);
+                        const rate = ev.hourlyRate != null ? ev.hourlyRate : DATA.settings.shiftHourlyRate;
+                        shiftIncome += hrs * rate + (ev.commission || 0);
+                    }
                     if (ev.type === 'lesson') {
                         lessonsTotal++;
                         if (ev.status === 'attended' || ev.status === 'late-cancel') {
@@ -2695,7 +2707,6 @@
                         }
                     }
                 });
-                const shiftIncome = shiftHours * DATA.settings.shiftHourlyRate + tips;
                 const totalIncome = shiftIncome + lessonIncome;
 
                 document.getElementById('financeHolder').innerHTML = `
@@ -2750,7 +2761,7 @@
                 shifts.forEach(ev => {
                     const { start, end } = eventRange(ev);
                     const hrs = (end - start) / 3600000;
-                    const income = hrs * DATA.settings.shiftHourlyRate + (ev.commission || 0);
+                    const income = hrs * (ev.hourlyRate != null ? ev.hourlyRate : DATA.settings.shiftHourlyRate) + (ev.commission || 0);
                     const kind = shiftKindLabel(ev);
                     if (!byKind[kind.label]) byKind[kind.label] = { emo: kind.emo, count: 0, hours: 0, tips: 0, income: 0 };
                     byKind[kind.label].count++;
@@ -2771,7 +2782,7 @@
                 const listHtml = shifts.map(ev => {
                     const { start, end } = eventRange(ev);
                     const hrs = (end - start) / 3600000;
-                    const income = hrs * DATA.settings.shiftHourlyRate + (ev.commission || 0);
+                    const income = hrs * (ev.hourlyRate != null ? ev.hourlyRate : DATA.settings.shiftHourlyRate) + (ev.commission || 0);
                     const kind = shiftKindLabel(ev);
                     return `<div class="ev-card" style="--c:var(--shift);--cbg:var(--shift-bg);">
                                 <div class="ev-time"><div class="t1">${ev.startTime}</div><div class="t2">${ev.endTime}</div></div>
