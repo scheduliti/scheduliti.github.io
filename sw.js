@@ -1,26 +1,23 @@
-// ⚠️ בכל פעם שאתה מעדכן קובץ כלשהו באפליקציה (index.html וכו'),
-// תעלה את המספר הזה (v4 → v5 → v6...). זה היוצר את הגרסה החדשה.
-const CACHE_VERSION = 'v8';
+const CACHE_VERSION = 'v9';
 const CACHE_NAME = 'hilit-schedule-' + CACHE_VERSION;
 
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
+  './icon-192.png'
 ];
 
-/* ---------- INSTALL ---------- */
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS_TO_CACHE))
-      .then(() => self.skipWaiting()) // אל תחכה שכל הטאבים הישנים ייסגרו - תפוס שליטה מיד
+      .then(cache => Promise.all(
+        ASSETS_TO_CACHE.map(url => cache.add(url).catch(() => {}))
+      ))
+      .then(() => self.skipWaiting())
   );
 });
 
-/* ---------- ACTIVATE ---------- */
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
@@ -28,28 +25,39 @@ self.addEventListener('activate', event => {
         keys.filter(k => k.startsWith('hilit-schedule-') && k !== CACHE_NAME)
             .map(k => caches.delete(k))
       ))
-      .then(() => self.clients.claim()) // תפוס שליטה על כל הטאבים הפתוחים מיד, בלי לחכות לרענון ידני
+      .then(() => self.clients.claim())
   );
 });
 
-/* ---------- FETCH ---------- */
 self.addEventListener('fetch', event => {
-  const isHTML = event.request.mode === 'navigate' || event.request.url.endsWith('index.html');
+  const req = event.request;
+  const url = new URL(req.url);
+
+  // לא נוגעים בשום דבר חיצוני (Firestore, Firebase Auth, פונטים) ולא בבקשות שאינן GET
+  if (req.method !== 'GET' || url.origin !== self.location.origin) return;
+
+  const isHTML = req.mode === 'navigate' || url.pathname.endsWith('.html');
 
   if (isHTML) {
-    // network-first, ותמיד עוקף מטמון HTTP (no-store) כדי לא לקבל גרסה תקועה גם ברמת הדפדפן/שרת
     event.respondWith(
-      fetch(event.request, { cache: 'no-store' })
+      fetch(req, { cache: 'no-store' })
         .then(response => {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
           return response;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => caches.match(req))
     );
   } else {
+    // network-first גם לשאר הקבצים, עם גיבוי מה-cache
     event.respondWith(
-      caches.match(event.request).then(response => response || fetch(event.request))
+      fetch(req)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
+          return response;
+        })
+        .catch(() => caches.match(req))
     );
   }
 });
